@@ -1,0 +1,33 @@
+# Environment
+.env
+.env.*
+!.env.example
+.envrc
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+
+# Build artifacts
+dist/
+build/
+*.log
+
+# Adversarial spec checkpoints (local only)
+.adversarial-spec-checkpoints/
+
+# Worktrees are managed separately
+.worktrees/

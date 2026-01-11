@@ -1,0 +1,68 @@
+name: Validate Pipelines
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'templates/**/*.yaml'
+      - 'templates/**/*.yml'
+      - 'walkthroughs/**/*.yaml'
+      - 'walkthroughs/**/*.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'templates/**/*.yaml'
+      - 'templates/**/*.yml'
+      - 'walkthroughs/**/*.yaml'
+      - 'walkthroughs/**/*.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate Pipeline Configs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install expanso-cli
+        run: |
+          curl -sSL https://get.expanso.io | bash
+          echo "$HOME/.expanso/bin" >> "$GITHUB_PATH"
+
+      - name: Verify installation
+        run: |
+          expanso-cli --version
+          expanso-edge --version
+
+      - name: Validate all templates
+        run: |
+          echo "Validating templates..."
+          failed=0
+          shopt -s nullglob
+          for file in templates/**/*.yaml templates/**/*.yml; do
+            if [[ -f "$file" && -s "$file" ]]; then
+              echo "Validating: $file"
+              if ! expanso-cli job validate "$file"; then
+                failed=1
+              fi
+            fi
+          done
+          exit $failed
+
+      - name: Validate all walkthroughs
+        run: |
+          echo "Validating walkthroughs..."
+          failed=0
+          shopt -s nullglob
+          for file in walkthroughs/**/*.yaml walkthroughs/**/*.yml; do
+            if [[ -f "$file" && -s "$file" ]]; then
+              echo "Validating: $file"
+              if ! expanso-cli job validate "$file"; then
+                failed=1
+              fi
+            fi
+          done
+          exit $failed
