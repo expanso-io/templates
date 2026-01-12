@@ -1,0 +1,23 @@
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    # Add processing metadata
+    - mapping: |
+        root = this
+        root.processed_at = now().ts_format("2006-01-02T15:04:05Z")
+        root.storage_tier = "standard"
+
+output:
+  azure_blob_storage:
+    storage_account: "${AZURE_STORAGE_ACCOUNT}"
+    storage_access_key: "${AZURE_STORAGE_ACCESS_KEY}"
+    container: "${AZURE_CONTAINER}"
+    # Date-based path: data/YYYY/MM/DD/events-TIMESTAMP.json
+    path: "${BLOB_PREFIX:data/}${!timestamp_unix:2006}/${!timestamp_unix:01}/${!timestamp_unix:02}/events-${!count:timestamp_unix_nano}.json"
+    blob_type: BLOCK
+    batching:
+      count: 100
+      period: "10s"

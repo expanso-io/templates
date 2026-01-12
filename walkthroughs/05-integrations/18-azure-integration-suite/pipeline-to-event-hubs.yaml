@@ -1,0 +1,24 @@
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    # Add event metadata
+    - mapping: |
+        root = this
+        root.ingestion_timestamp = now().ts_format("2006-01-02T15:04:05Z")
+        root.pipeline_version = "1.0"
+
+        # Set partition key for consistent routing
+        root.partition_key = this.user_id
+
+output:
+  azure_event_hubs:
+    connection_string: "${EVENTHUBS_CONNECTION_STRING}"
+    eventhub: "${EVENTHUB_NAME}"
+    partition_key: ${! json("partition_key") }
+    batching:
+      count: 100
+      period: "10s"
+      byte_size: 1000000
