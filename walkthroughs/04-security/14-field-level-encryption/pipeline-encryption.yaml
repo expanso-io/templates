@@ -1,0 +1,22 @@
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        root = this
+
+        # Encrypt sensitive field with AES
+        root.ssn_encrypted = if this.exists("ssn") {
+          this.ssn.encrypt_aes("${ENCRYPTION_KEY}")
+        }
+
+        # Remove plaintext
+        root = root.without("ssn")
+
+        root.encrypted_at = now().ts_format("2006-01-02T15:04:05Z")
+
+output:
+  stdout:
+    codec: lines
