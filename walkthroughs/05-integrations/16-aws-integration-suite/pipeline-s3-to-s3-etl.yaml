@@ -1,0 +1,66 @@
+input:
+  aws_s3:
+    bucket: "${SOURCE_BUCKET:${S3_BUCKET}}"
+    prefix: "${SOURCE_PREFIX:raw-logs/}"
+    region: "${AWS_REGION:us-east-1}"
+    credentials:
+      profile: "${AWS_PROFILE:}"
+      id: "${AWS_ACCESS_KEY_ID:}"
+      secret: "${AWS_SECRET_ACCESS_KEY:}"
+    delete_objects: ${DELETE_AFTER_PROCESSING:false}
+    scanner:
+      to_the_end: {}
+
+pipeline:
+  processors:
+    # Parse JSON
+    - mapping: |
+        root = this.parse_json()
+
+    # Data quality: filter and validate
+    - mapping: |
+        # Only process valid log levels
+        root = if ["INFO", "WARN", "ERROR", "DEBUG"].contains(this.level) {
+          this
+        } else {
+          deleted()
+        }
+
+    # Transform and enrich
+    - mapping: |
+        root = this
+
+        # Severity scoring
+        root.severity_score = match this.level {
+          "ERROR" => 3,
+          "WARN" => 2,
+          "INFO" => 1,
+          "DEBUG" => 0,
+          _ => 0
+        }
+
+        # Performance classification
+        root.performance_class = match {
+          this.duration_ms.number() < 100 => "fast",
+          this.duration_ms.number() < 1000 => "normal",
+          _ => "slow"
+        }
+
+        # Add processing metadata
+        root.processed_at = now().ts_format("2006-01-02T15:04:05Z")
+        root.processing_pipeline = "s3-to-s3-etl"
+        root.source_file = meta("s3_key")
+
+output:
+  aws_s3:
+    bucket: "${TARGET_BUCKET:${S3_BUCKET}}"
+    path: "${TARGET_PREFIX:processed/}${!timestamp_unix:2006}/${!timestamp_unix:01}/${!timestamp_unix:02}/${!this.level}-${!count:timestamp_unix_nano}.json"
+    region: "${AWS_REGION:us-east-1}"
+    credentials:
+      profile: "${AWS_PROFILE:}"
+      id: "${AWS_ACCESS_KEY_ID:}"
+      secret: "${AWS_SECRET_ACCESS_KEY:}"
+    content_type: "application/json"
+    batching:
+      count: 100
+      period: "10s"

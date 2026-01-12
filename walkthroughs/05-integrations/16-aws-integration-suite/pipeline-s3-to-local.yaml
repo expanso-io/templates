@@ -1,0 +1,33 @@
+input:
+  aws_s3:
+    bucket: "${S3_BUCKET}"
+    prefix: "${S3_PREFIX:raw-logs/}"
+    region: "${AWS_REGION:us-east-1}"
+    credentials:
+      profile: "${AWS_PROFILE:}"
+      id: "${AWS_ACCESS_KEY_ID:}"
+      secret: "${AWS_SECRET_ACCESS_KEY:}"
+    scanner:
+      to_the_end: {}
+
+pipeline:
+  processors:
+    # Parse JSON
+    - mapping: |
+        root = this.parse_json()
+
+    # Transform and enrich
+    - mapping: |
+        root = this
+        root.severity_score = match this.level {
+          "ERROR" => 3,
+          "WARN" => 2,
+          "INFO" => 1,
+          _ => 0
+        }
+        root.is_slow = this.duration_ms.number() > 1000
+        root.processed_at = now().ts_format("2006-01-02T15:04:05Z")
+
+output:
+  stdout:
+    codec: lines

@@ -1,0 +1,26 @@
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    # Add partition metadata
+    - mapping: |
+        root = this
+        root.partition_date = now().ts_format("2006-01-02")
+        root.write_timestamp = now().ts_unix()
+
+output:
+  aws_s3:
+    bucket: "${S3_BUCKET}"
+    # Date-based partitioning: processed/YYYY/MM/DD/data-TIMESTAMP.json
+    path: "${S3_PREFIX:processed/}${!timestamp_unix:2006}/${!timestamp_unix:01}/${!timestamp_unix:02}/data-${!count:timestamp_unix_nano}.json"
+    region: "${AWS_REGION:us-east-1}"
+    credentials:
+      profile: "${AWS_PROFILE:}"
+      id: "${AWS_ACCESS_KEY_ID:}"
+      secret: "${AWS_SECRET_ACCESS_KEY:}"
+    content_type: "application/json"
+    batching:
+      count: 100
+      period: "10s"
