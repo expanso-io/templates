@@ -1,0 +1,3 @@
+{"event_id":"evt-001","required_field":"value","data":"good"}
+{"event_id":"evt-002","data":"bad"}
+{"event_id":"evt-003","required_field":"value","data":"good"}

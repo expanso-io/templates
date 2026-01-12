@@ -1,0 +1,21 @@
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        root = this
+        # Simulate processing that might fail
+        root.validated = if this.exists("required_field") { true } else { throw("missing required_field") }
+
+output:
+  fallback:
+    # Primary output - only succeeds if no errors
+    - file:
+        path: "output/processed.json"
+
+    # DLQ - catches failures from primary
+    - file:
+        path: "output/dlq-${!timestamp_unix}.json"
+        codec: lines
