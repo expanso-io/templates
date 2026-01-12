@@ -1,0 +1,29 @@
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        root = this
+
+        # Mask email
+        root.email = if this.exists("email") {
+          this.email.re_replace_all("[^@]+", "***")
+        }
+
+        # Mask credit card
+        root.credit_card = if this.exists("credit_card") {
+          this.credit_card.re_replace_all("\\d{4}\\s?\\d{4}\\s?\\d{4}\\s?(\\d{4})", "****-****-****-$1")
+        }
+
+        # Mask SSN
+        root.ssn = if this.exists("ssn") {
+          this.ssn.re_replace_all("\\d{3}-\\d{2}-(\\d{4})", "***-**-$1")
+        }
+
+        root.masked_at = now().ts_format("2006-01-02T15:04:05Z")
+
+output:
+  stdout:
+    codec: lines
