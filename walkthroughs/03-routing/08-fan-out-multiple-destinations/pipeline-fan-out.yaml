@@ -1,0 +1,18 @@
+input:
+  stdin:
+    codec: lines
+
+output:
+  broker:
+    pattern: fan_out
+    outputs:
+      - file:
+          path: "output/archive-${!count:timestamp_unix}.json"
+          codec: lines
+
+      - file:
+          path: "output/search-${!count:timestamp_unix}.json"
+          codec: lines
+
+      - stdout:
+          codec: lines
