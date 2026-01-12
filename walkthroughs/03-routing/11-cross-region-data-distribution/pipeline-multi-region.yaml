@@ -1,0 +1,25 @@
+input:
+  stdin:
+    codec: lines
+
+output:
+  switch:
+    cases:
+      - check: this.region == "us-east"
+        output:
+          file:
+            path: "output/us-east/${!this.event_id}.json"
+
+      - check: this.region == "eu-west"
+        output:
+          file:
+            path: "output/eu-west/${!this.event_id}.json"
+
+      - check: this.region == "ap-south"
+        output:
+          file:
+            path: "output/ap-south/${!this.event_id}.json"
+
+      - output:
+          file:
+            path: "output/default/${!this.event_id}.json"
