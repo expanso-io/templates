@@ -1,0 +1,25 @@
+input:
+  stdin:
+    codec: lines
+
+output:
+  switch:
+    cases:
+      - check: this.severity == "critical"
+        output:
+          file:
+            path: "output/critical-alerts.json"
+
+      - check: this.amount.number() > 1000
+        output:
+          file:
+            path: "output/high-value-transactions.json"
+
+      - check: this.action == "login" || this.action == "logout"
+        output:
+          file:
+            path: "output/auth-events.json"
+
+      - output:
+          file:
+            path: "output/general-events.json"

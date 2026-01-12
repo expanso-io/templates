@@ -1,0 +1,4 @@
+{"event_id":"evt-001","severity":"critical","message":"Database down"}
+{"event_id":"evt-002","action":"login","user_id":"user-123"}
+{"event_id":"evt-003","action":"purchase","amount":1500}
+{"event_id":"evt-004","action":"view","page":"/products"}
