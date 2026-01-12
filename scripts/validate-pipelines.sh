@@ -74,6 +74,24 @@ check_dependencies() {
     fi
 }
 
+# Wrap a template in a job structure for validation
+wrap_template() {
+    local template_file="$1"
+    local wrapped_file="$2"
+
+    cat > "$wrapped_file" <<EOF
+type: pipeline
+name: validation-wrapper
+version: 1
+
+spec: {}
+
+config:
+EOF
+    # Indent the template content by 2 spaces and append
+    sed 's/^/  /' "$template_file" >> "$wrapped_file"
+}
+
 # Validate a single YAML file
 validate_file() {
     local file="$1"
@@ -95,10 +113,16 @@ validate_file() {
         echo -e "${BLUE}Validating: $relative_path${NC}"
     fi
 
-    # Run validation
+    # Create temporary wrapped file
+    local temp_wrapped=$(mktemp)
+    trap "rm -f $temp_wrapped" RETURN
+
+    wrap_template "$file" "$temp_wrapped"
+
+    # Run validation on wrapped file (offline mode to skip server-side validation)
     local output
     local exit_code=0
-    output=$(expanso-cli job validate "$file" 2>&1) || exit_code=$?
+    output=$(expanso-cli job validate "$temp_wrapped" --offline 2>&1) || exit_code=$?
 
     if [[ $exit_code -eq 0 ]]; then
         PASSED_FILES+=("$relative_path")
@@ -110,6 +134,10 @@ validate_file() {
         FAILED_FILES+=("$relative_path")
         echo -e "${RED}✗ FAILED: $relative_path${NC}"
         echo "$output" | sed 's/^/    /'
+        if $VERBOSE; then
+            echo -e "${YELLOW}  Wrapped file for debugging:${NC}"
+            cat "$temp_wrapped" | sed 's/^/    /'
+        fi
         return 1
     fi
 }

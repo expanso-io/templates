@@ -1,0 +1,27 @@
+# Template: File to Stdout
+# Description: Read lines from a file and output to stdout - the simplest possible pipeline
+# Components: file → stdout
+# Docs: https://docs.expanso.io/components/inputs/file
+#       https://docs.expanso.io/components/outputs/stdout
+#
+# Usage:
+#   echo "Hello World" > /tmp/test-input.txt
+#   expanso-edge run templates/inputs/file-to-stdout.yaml
+#
+# Configuration:
+#   - INPUT_FILE_PATH: Path to input file (default: /tmp/test-input.txt)
+#   - OUTPUT_CODEC: Output format - lines, all-bytes, append, or delim:X (default: lines)
+
+input:
+  label: "file_reader"
+  file:
+    paths:
+      - "${INPUT_FILE_PATH:/tmp/test-input.txt}"
+    scanner:
+      lines: {}
+    auto_replay_nacks: true
+
+output:
+  label: "stdout_writer"
+  stdout:
+    codec: "${OUTPUT_CODEC:lines}"
