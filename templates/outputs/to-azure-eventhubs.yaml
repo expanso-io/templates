@@ -1,0 +1,54 @@
+# Template: Stream to Azure Event Hubs
+# Description: Stream real-time events to Azure Event Hubs
+# Components: stdin → azure_event_hubs
+# Docs: https://docs.expanso.io/components/inputs/stdin
+#       https://docs.expanso.io/components/outputs/azure_event_hubs
+#
+# Usage:
+#   export EVENTHUBS_CONNECTION_STRING="Endpoint=sb://..."
+#   export EVENTHUBS_NAME="my-event-hub"
+#   cat events.json | expanso-edge run templates/outputs/to-azure-eventhubs.yaml
+#
+# Configuration:
+#   - EVENTHUBS_CONNECTION_STRING: Event Hubs connection string (required)
+#   - EVENTHUBS_NAME: Event Hub name (required)
+#   - EVENTHUBS_PARTITION_KEY: Field to use for partitioning (optional)
+#   - BATCH_COUNT: Events per batch (default: 100)
+#   - BATCH_PERIOD: Max time per batch (default: 10s)
+#   - MAX_BATCH_BYTES: Max bytes per batch (default: 1MB)
+#
+# ## SECURITY WARNING
+# - Use Azure Managed Identity in production (not connection strings)
+# - Store connection strings in Azure Key Vault
+# - Never commit credentials to version control
+# - Use SAS policies with minimal permissions (Send only)
+# - Rotate SAS keys regularly
+# - Enable diagnostic logs for audit trail
+#
+# Partitioning:
+#   - Use EVENTHUBS_PARTITION_KEY to distribute events across partitions
+#   - Without a partition key, events are round-robin distributed
+#   - Partition keys ensure ordering within a partition
+
+input:
+  label: "stdin_reader"
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        # Optionally add metadata
+        root = this
+        root.ingested_at = now().ts_format("2006-01-02T15:04:05Z")
+
+output:
+  label: "eventhubs_writer"
+  azure_event_hubs:
+    connection_string: "${EVENTHUBS_CONNECTION_STRING}"
+    hub_name: "${EVENTHUBS_NAME}"
+    partition_key: "${EVENTHUBS_PARTITION_KEY:}"
+    batching:
+      count: ${BATCH_COUNT:100}
+      period: "${BATCH_PERIOD:10s}"
+      byte_size: ${MAX_BATCH_BYTES:1000000}

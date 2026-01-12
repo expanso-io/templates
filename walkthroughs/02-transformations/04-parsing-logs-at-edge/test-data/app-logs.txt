@@ -1,0 +1,10 @@
+2026-01-11T10:00:00Z INFO Application started successfully
+2026-01-11T10:00:15Z DEBUG Database connection established
+2026-01-11T10:01:23Z INFO User login: user@example.com
+2026-01-11T10:02:45Z WARN High memory usage detected: 85%
+2026-01-11T10:05:12Z ERROR Failed to connect to external API: timeout
+2026-01-11T10:05:13Z INFO Retrying external API connection
+2026-01-11T10:05:20Z INFO External API connection successful
+2026-01-11T10:10:30Z INFO Processing batch job: batch-2026-01-11
+2026-01-11T10:15:45Z DEBUG Cache hit rate: 92%
+2026-01-11T10:20:00Z CRITICAL System memory exhausted, shutting down

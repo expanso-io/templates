@@ -1,0 +1,76 @@
+# Template: Circuit Breaker with Fallback
+# Description: Handle failures gracefully with circuit breaker and fallback output
+# Components: kafka → try → [primary http, fallback file]
+# Docs: https://docs.expanso.io/components/inputs/kafka
+#       https://docs.expanso.io/components/outputs/try
+#       https://docs.expanso.io/components/outputs/http_client
+#       https://docs.expanso.io/components/outputs/file
+#
+# Usage:
+#   export KAFKA_BROKERS="localhost:9092"
+#   export KAFKA_TOPICS="events"
+#   export PRIMARY_API_URL="https://api.example.com/events"
+#   export FALLBACK_PATH="/tmp/fallback/"
+#   expanso-edge run templates/patterns/circuit-breaker.yaml
+#
+# Configuration:
+#   - KAFKA_BROKERS: Kafka broker addresses (required)
+#   - KAFKA_TOPICS: Topics to consume (required)
+#   - KAFKA_CONSUMER_GROUP: Consumer group ID (default: expanso-cb)
+#   - PRIMARY_API_URL: Primary API endpoint (required)
+#   - API_TIMEOUT: Request timeout (default: 5s)
+#   - FALLBACK_PATH: Fallback file path (default: /tmp/fallback/)
+#   - MAX_RETRIES: Retries before fallback (default: 3)
+#   - BACKOFF_INITIAL: Initial backoff (default: 1s)
+#   - BACKOFF_MAX: Max backoff (default: 30s)
+#
+# Circuit Breaker Pattern:
+#   1. Try to send to primary API
+#   2. Retry with exponential backoff on failure
+#   3. After MAX_RETRIES, fall back to file storage
+#   4. File storage allows later replay when API recovers
+
+input:
+  label: "kafka_consumer"
+  kafka:
+    addresses:
+      - "${KAFKA_BROKERS}"
+    topics:
+      - "${KAFKA_TOPICS}"
+    consumer_group: "${KAFKA_CONSUMER_GROUP:expanso-cb}"
+
+pipeline:
+  processors:
+    - mapping: |
+        # Add processing metadata
+        root = this
+        root.attempt_timestamp = now().ts_format("2006-01-02T15:04:05Z")
+
+output:
+  label: "circuit_breaker"
+  try:
+    # Primary output: HTTP API
+    - http_client:
+        url: "${PRIMARY_API_URL}"
+        verb: POST
+        headers:
+          Content-Type: "application/json"
+        timeout: "${API_TIMEOUT:5s}"
+        retry_period: "${BACKOFF_INITIAL:1s}"
+        max_retry_backoff: "${BACKOFF_MAX:30s}"
+        retries: ${MAX_RETRIES:3}
+        backoff:
+          initial_interval: "${BACKOFF_INITIAL:1s}"
+          max_interval: "${BACKOFF_MAX:30s}"
+          max_elapsed_time: 5m
+
+    # Fallback output: File storage for later replay
+    - file:
+        path: "${FALLBACK_PATH:/tmp/fallback/}failed-${!timestamp_unix:2006-01-02-15}.jsonl"
+        codec: lines
+      processors:
+        - mapping: |
+            # Add fallback metadata
+            root = this
+            root.fallback_reason = "primary_api_failed"
+            root.fallback_at = now().ts_format("2006-01-02T15:04:05Z")

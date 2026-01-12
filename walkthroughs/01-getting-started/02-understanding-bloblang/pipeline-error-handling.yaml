@@ -1,0 +1,33 @@
+# Walkthrough 02: Understanding Bloblang - Error Handling
+
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        # Safe field access with defaults
+        root.id = this.id catch uuid_v4()
+        root.type = this.type catch "unknown"
+        root.message = this.msg catch this.message catch ""
+
+        # Safe type conversions
+        root.priority = this.priority.number() catch 0
+        root.count = this.count.number() catch 1
+        root.enabled = this.enabled.bool() catch true
+
+        # Safe array/object access
+        root.tags = this.tags catch []
+        root.metadata = this.metadata catch {}
+
+        # Chained catches for flexible field names
+        root.user_id = this.user.id catch this.userId catch this.user_id catch "anonymous"
+        root.timestamp = this.timestamp catch this.ts catch this.time catch now().ts_format("2006-01-02T15:04:05Z")
+
+        # Computed field with error handling
+        root.is_critical = (this.priority.number() catch 0) > 8 && (this.type.lowercase() catch "") == "error"
+
+output:
+  stdout:
+    codec: lines

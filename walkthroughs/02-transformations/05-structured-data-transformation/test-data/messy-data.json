@@ -1,0 +1,4 @@
+{"user":{"id":"user-123"},"count":"10","enabled":"true"}
+{"userId":"user-456","count":null,"amount":"99.99"}
+{"user_identifier":"user-789","tags":["a","b"],"user":{"address":{"city":"Seattle"}}}
+{}

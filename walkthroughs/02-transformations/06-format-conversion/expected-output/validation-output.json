@@ -1,0 +1,2 @@
+{"id":"evt-001","user_id":12345,"email":"alice@example.com","amount":99.5,"enabled":true,"created_at":"2024-01-15T10:00:00Z","validated_at":"2026-01-12T10:00:00Z","schema_version":"1.0"}
+{"id":"evt-002","user_id":67890,"email":"bob@example.com","amount":150.25,"enabled":false,"created_at":"2024-01-15T11:30:00Z","validated_at":"2026-01-12T10:00:00Z","schema_version":"1.0"}

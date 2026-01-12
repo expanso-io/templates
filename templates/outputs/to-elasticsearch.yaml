@@ -1,0 +1,54 @@
+# Template: Index to Elasticsearch
+# Description: Stream documents to Elasticsearch for search and analytics
+# Components: stdin → elasticsearch
+# Docs: https://docs.expanso.io/components/inputs/stdin
+#       https://docs.expanso.io/components/outputs/elasticsearch
+#
+# Usage:
+#   export ES_URLS="https://localhost:9200"
+#   export ES_INDEX="logs"
+#   export ES_USERNAME="elastic"
+#   export ES_PASSWORD="password"
+#   cat logs.json | expanso-edge run templates/outputs/to-elasticsearch.yaml
+#
+# Configuration:
+#   - ES_URLS: Elasticsearch URLs (required, comma-separated for multiple)
+#   - ES_INDEX: Target index name (required)
+#   - ES_USERNAME: Basic auth username (optional)
+#   - ES_PASSWORD: Basic auth password (optional)
+#   - ES_API_KEY: API key for authentication (optional, preferred over basic auth)
+#   - ES_SKIP_TLS_VERIFY: Skip TLS cert verification (default: false)
+#   - ES_ID_FIELD: Document field to use as _id (default: auto-generated)
+#   - BATCH_COUNT: Documents per batch (default: 100)
+#   - BATCH_PERIOD: Max time per batch (default: 10s)
+#
+# ## SECURITY WARNING
+# - Use API keys instead of username/password in production
+# - Store credentials in secret management systems
+# - Never commit credentials to version control
+# - Always use HTTPS for Elasticsearch endpoints
+# - Enable TLS certificate verification in production
+# - Use dedicated users with index-level permissions
+
+input:
+  label: "stdin_reader"
+  stdin:
+    codec: lines
+
+output:
+  label: "elasticsearch_writer"
+  elasticsearch:
+    urls:
+      - "${ES_URLS}"
+    index: "${ES_INDEX}"
+    id: "${ES_ID_FIELD:}"
+    basic_auth:
+      enabled: true
+      username: "${ES_USERNAME:}"
+      password: "${ES_PASSWORD:}"
+    api_key: "${ES_API_KEY:}"
+    tls:
+      skip_cert_verify: ${ES_SKIP_TLS_VERIFY:false}
+    batching:
+      count: ${BATCH_COUNT:100}
+      period: "${BATCH_PERIOD:10s}"

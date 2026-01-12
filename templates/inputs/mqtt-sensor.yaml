@@ -1,0 +1,45 @@
+# Template: MQTT Sensor Ingestion
+# Description: Subscribe to MQTT topics for IoT sensor data
+# Components: mqtt → stdout
+# Docs: https://docs.expanso.io/components/inputs/mqtt
+#       https://docs.expanso.io/components/outputs/stdout
+#
+# Usage:
+#   export MQTT_URLS="tcp://broker.hivemq.com:1883"
+#   export MQTT_TOPICS="sensors/#"
+#   expanso-edge run templates/inputs/mqtt-sensor.yaml
+#
+# Configuration:
+#   - MQTT_URLS: MQTT broker URLs (required, comma-separated for multiple)
+#   - MQTT_TOPICS: Topic patterns to subscribe (required, comma-separated)
+#   - MQTT_CLIENT_ID: Client identifier (default: expanso-<random>)
+#   - MQTT_QOS: Quality of Service 0,1,2 (default: 1)
+#   - MQTT_CLEAN_SESSION: Start with clean session (default: true)
+#   - MQTT_USERNAME: Authentication username (optional)
+#   - MQTT_PASSWORD: Authentication password (optional)
+#   - MQTT_TLS_ENABLED: Enable TLS encryption (default: false)
+#   - OUTPUT_CODEC: Output format (default: lines)
+#
+# ## SECURITY WARNING
+# - Use TLS (ssl://) for production deployments
+# - Store credentials in environment variables or secret management systems
+# - Never commit credentials to version control
+# - Use strong authentication for public brokers
+
+input:
+  label: "mqtt_subscriber"
+  mqtt:
+    urls:
+      - "${MQTT_URLS}"
+    topics:
+      - "${MQTT_TOPICS}"
+    client_id: "${MQTT_CLIENT_ID:}"
+    qos: ${MQTT_QOS:1}
+    clean_session: ${MQTT_CLEAN_SESSION:true}
+    user: "${MQTT_USERNAME:}"
+    password: "${MQTT_PASSWORD:}"
+
+output:
+  label: "stdout_writer"
+  stdout:
+    codec: "${OUTPUT_CODEC:lines}"

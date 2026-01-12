@@ -1,0 +1,5 @@
+{"event_id":"evt-001","event_type":"info","message":"User logged in","source":"auth-service","processed_at":"2026-01-11T18:40:00Z"}
+{"event_id":"<generated-uuid>","event_type":"error","message":"Database connection failed","source":"db-service","processed_at":"2026-01-11T18:40:00Z"}
+{"event_id":"evt-003","event_type":"warning","message":"  High memory usage  ","source":"unknown","processed_at":"2026-01-11T18:40:00Z"}
+{"event_id":"<generated-uuid>","event_type":"info","message":"Batch job completed","source":"unknown","processed_at":"2026-01-11T18:40:00Z"}
+{"event_id":"evt-005","event_type":"error","message":"API timeout","source":"unknown","processed_at":"2026-01-11T18:40:00Z"}

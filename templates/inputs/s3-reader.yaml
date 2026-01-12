@@ -1,0 +1,45 @@
+# Template: S3 Object Reader
+# Description: Read objects from S3 bucket with prefix filtering
+# Components: aws_s3 → stdout
+# Docs: https://docs.expanso.io/components/inputs/aws_s3
+#       https://docs.expanso.io/components/outputs/stdout
+#
+# Usage:
+#   export AWS_REGION="us-east-1"
+#   export S3_BUCKET="my-bucket"
+#   export S3_PREFIX="logs/"
+#   expanso-edge run templates/inputs/s3-reader.yaml
+#
+# Configuration:
+#   - S3_BUCKET: S3 bucket name (required)
+#   - S3_PREFIX: Object key prefix filter (default: "")
+#   - AWS_REGION: AWS region (default: us-east-1)
+#   - AWS_PROFILE: AWS credentials profile (default: "")
+#   - AWS_ACCESS_KEY_ID: AWS access key (optional, uses AWS SDK chain if not set)
+#   - AWS_SECRET_ACCESS_KEY: AWS secret key (optional)
+#   - S3_DELETE_OBJECTS: Delete objects after reading (default: false)
+#   - OUTPUT_CODEC: Output format (default: lines)
+#
+# ## SECURITY WARNING
+# - Store credentials in AWS config/credentials files or use IAM roles
+# - Never commit credentials to version control
+# - Use environment variables or credential management systems in production
+
+input:
+  label: "s3_reader"
+  aws_s3:
+    bucket: "${S3_BUCKET}"
+    prefix: "${S3_PREFIX:}"
+    region: "${AWS_REGION:us-east-1}"
+    credentials:
+      profile: "${AWS_PROFILE:}"
+      id: "${AWS_ACCESS_KEY_ID:}"
+      secret: "${AWS_SECRET_ACCESS_KEY:}"
+    delete_objects: ${S3_DELETE_OBJECTS:false}
+    scanner:
+      to_the_end: {}
+
+output:
+  label: "stdout_writer"
+  stdout:
+    codec: "${OUTPUT_CODEC:lines}"

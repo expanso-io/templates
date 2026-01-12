@@ -1,0 +1,90 @@
+# Template: Field-Level AES Encryption
+# Description: Encrypt sensitive fields using AES encryption
+# Components: stdin → mapping → stdout
+# Docs: https://docs.expanso.io/components/inputs/stdin
+#       https://docs.expanso.io/components/processors/mapping
+#       https://docs.expanso.io/components/outputs/stdout
+#       https://docs.expanso.io/guides/bloblang/methods
+#
+# Usage:
+#   export ENCRYPTION_KEY="your-32-byte-base64-key"
+#   cat sensitive-data.json | expanso-edge run templates/patterns/field-encryption.yaml
+#
+# Configuration:
+#   - ENCRYPTION_KEY: Base64-encoded 32-byte AES key (required)
+#   - OUTPUT_CODEC: Output format (default: lines)
+#
+# ## SECURITY WARNING
+# - Generate encryption keys with cryptographically secure random generators
+# - NEVER commit encryption keys to version control
+# - Store keys in dedicated secret management systems (AWS KMS, HashiCorp Vault, etc.)
+# - Rotate encryption keys regularly
+# - Use different keys for different environments (dev/staging/prod)
+# - Consider using envelope encryption for large-scale deployments
+#
+# Key Generation:
+#   Generate a secure 32-byte key:
+#   openssl rand -base64 32
+#
+# Encryption Strategy:
+#   - Encrypt PII fields (email, SSN, phone, etc.)
+#   - Keep non-sensitive fields in plaintext for querying
+#   - Add encryption metadata (algorithm, key_id, encrypted_at)
+#   - Encrypted fields are base64-encoded for storage
+
+input:
+  label: "stdin_reader"
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        # Validate encryption key is provided
+        let key = "${ENCRYPTION_KEY:}".length() > 0
+
+        # Keep non-sensitive fields as-is
+        root.id = this.id
+        root.timestamp = this.timestamp catch now().ts_format("2006-01-02T15:04:05Z")
+        root.event_type = this.event_type catch "unknown"
+
+        # Encrypt sensitive fields using AES
+        root.email_encrypted = if $key {
+          this.email.encrypt_aes("${ENCRYPTION_KEY}", "ctr").encode("base64") catch ""
+        } else {
+          "ENCRYPTION_KEY_NOT_SET"
+        }
+
+        root.phone_encrypted = if $key {
+          this.phone.encrypt_aes("${ENCRYPTION_KEY}", "ctr").encode("base64") catch ""
+        } else {
+          "ENCRYPTION_KEY_NOT_SET"
+        }
+
+        root.ssn_encrypted = if $key {
+          this.ssn.encrypt_aes("${ENCRYPTION_KEY}", "ctr").encode("base64") catch ""
+        } else {
+          "ENCRYPTION_KEY_NOT_SET"
+        }
+
+        root.credit_card_encrypted = if $key {
+          (this.credit_card catch this.card_number catch "").encrypt_aes("${ENCRYPTION_KEY}", "ctr").encode("base64")
+        } else {
+          "ENCRYPTION_KEY_NOT_SET"
+        }
+
+        # Add encryption metadata
+        root.encryption_metadata = {
+          "algorithm": "AES-256-CTR",
+          "key_version": "v1",
+          "encrypted_at": now().ts_format("2006-01-02T15:04:05Z"),
+          "encrypted_fields": ["email", "phone", "ssn", "credit_card"]
+        }
+
+        # Remove plaintext sensitive fields
+        root = this.without("email", "phone", "ssn", "credit_card", "card_number")
+
+output:
+  label: "stdout_writer"
+  stdout:
+    codec: "${OUTPUT_CODEC:lines}"

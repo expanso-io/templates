@@ -1,0 +1,72 @@
+# Template: Content-Based Routing
+# Description: Route messages to different outputs based on field values
+# Components: http_server → switch → [kafka, file]
+# Docs: https://docs.expanso.io/components/inputs/http_server
+#       https://docs.expanso.io/components/outputs/switch
+#       https://docs.expanso.io/components/outputs/kafka
+#       https://docs.expanso.io/components/outputs/file
+#
+# Usage:
+#   export HTTP_PORT="8080"
+#   export KAFKA_BROKERS="localhost:9092"
+#   export HIGH_PRIORITY_TOPIC="high-priority"
+#   export LOW_PRIORITY_TOPIC="low-priority"
+#   export ARCHIVE_PATH="/tmp/archive/"
+#   expanso-edge run templates/patterns/content-routing.yaml
+#
+# Configuration:
+#   - HTTP_PORT: HTTP server port (default: 8080)
+#   - KAFKA_BROKERS: Kafka broker addresses (required)
+#   - HIGH_PRIORITY_TOPIC: Topic for priority > 7 (default: high-priority)
+#   - LOW_PRIORITY_TOPIC: Topic for priority <= 7 (default: low-priority)
+#   - ARCHIVE_PATH: Path for archived events (default: /tmp/archive/)
+#
+# Routing Logic:
+#   - priority > 7 AND type == "error" → Kafka high-priority topic
+#   - priority > 4 → Kafka low-priority topic
+#   - All others → File archive
+
+input:
+  label: "http_webhook"
+  http_server:
+    address: "0.0.0.0:${HTTP_PORT:8080}"
+    path: /webhook
+    allowed_verbs:
+      - POST
+
+pipeline:
+  processors:
+    - mapping: |
+        # Add routing metadata
+        root = this
+        root.received_at = now().ts_format("2006-01-02T15:04:05Z")
+        root.priority = this.priority.number() catch 0
+        root.type = this.type.lowercase() catch "info"
+
+output:
+  switch:
+    cases:
+      # High priority errors go to dedicated topic
+      - check: 'this.priority > 7 && this.type == "error"'
+        output:
+          label: "high_priority_kafka"
+          kafka:
+            addresses:
+              - "${KAFKA_BROKERS}"
+            topic: "${HIGH_PRIORITY_TOPIC:high-priority}"
+
+      # Medium priority goes to standard topic
+      - check: 'this.priority > 4'
+        output:
+          label: "low_priority_kafka"
+          kafka:
+            addresses:
+              - "${KAFKA_BROKERS}"
+            topic: "${LOW_PRIORITY_TOPIC:low-priority}"
+
+      # Everything else gets archived to file
+      - output:
+          label: "file_archive"
+          file:
+            path: "${ARCHIVE_PATH:/tmp/archive/}${!timestamp_unix:2006-01-02}.jsonl"
+            codec: lines

@@ -1,0 +1,14 @@
+# Expected S3 bucket structure after running pipeline-to-s3.yaml
+# S3 Path: s3://my-expanso-test-bucket/data/
+
+data/
+├── 2026/
+│   └── 01/
+│       └── 11/
+│           ├── data-1736637600123456789.json
+│           ├── data-1736637600987654321.json
+│           └── data-1736637601555444333.json
+
+# Each file contains batched events (up to 100 per file, or 10s worth)
+# Objects are named with nanosecond timestamp for uniqueness
+# Date partitioning allows efficient querying by time range

@@ -1,0 +1,54 @@
+# Template: CSV to JSON Conversion
+# Description: Parse CSV data and convert to JSON format
+# Components: stdin → csv → stdout
+# Docs: https://docs.expanso.io/components/inputs/stdin
+#       https://docs.expanso.io/components/processors/csv
+#       https://docs.expanso.io/components/outputs/stdout
+#
+# Usage:
+#   cat data.csv | expanso-edge run templates/processors/csv-to-json.yaml
+#
+# Configuration:
+#   - CSV_DELIMITER: Field delimiter (default: ,)
+#   - CSV_LAZY_QUOTES: Allow lazy quote parsing (default: false)
+#   - OUTPUT_CODEC: Output format (default: lines)
+#
+# CSV Format:
+#   - First line should be headers (column names)
+#   - Subsequent lines are data rows
+#   - Quoted fields are supported
+#   - Empty fields become empty strings or can be transformed with Bloblang
+
+input:
+  label: "stdin_reader"
+  stdin:
+    codec: csv
+    csv:
+      delimiter: "${CSV_DELIMITER:,}"
+      lazy_quotes: ${CSV_LAZY_QUOTES:false}
+
+pipeline:
+  processors:
+    - mapping: |
+        # CSV processor outputs JSON automatically
+        # Add post-processing transformations here
+
+        # Pass through parsed CSV
+        root = this
+
+        # Example: Type conversions
+        # Uncomment and adjust based on your CSV schema
+        # root.id = this.id.number() catch 0
+        # root.amount = this.amount.number() catch 0.0
+        # root.enabled = this.enabled.bool() catch false
+
+        # Example: Date parsing
+        # root.created_at = this.created_at.ts_parse("2006-01-02") catch now()
+
+        # Add metadata
+        root.converted_at = now().ts_format("2006-01-02T15:04:05Z")
+
+output:
+  label: "stdout_writer"
+  stdout:
+    codec: "${OUTPUT_CODEC:lines}"

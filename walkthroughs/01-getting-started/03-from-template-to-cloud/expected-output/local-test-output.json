@@ -1,0 +1,3 @@
+{"event_id":"evt-001","user_id":"user-123","action":"login","timestamp":"2026-01-11T10:00:00Z","ip_address":"192.168.1.100","processed_at":"2026-01-11T18:45:00Z","pipeline_version":"1.0"}
+{"event_id":"evt-002","user_id":"user-456","action":"view_page","timestamp":"2026-01-11T10:01:30Z","page":"/dashboard","processed_at":"2026-01-11T18:45:00Z","pipeline_version":"1.0"}
+{"event_id":"evt-003","user_id":"user-123","action":"update_profile","timestamp":"2026-01-11T10:05:15Z","fields_changed":["email","phone"],"processed_at":"2026-01-11T18:45:00Z","pipeline_version":"1.0"}

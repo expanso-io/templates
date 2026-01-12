@@ -1,0 +1,76 @@
+# Template: Fan-Out to Multiple Destinations
+# Description: Route incoming data to multiple outputs in parallel
+# Components: kafka → broker (fan_out) → [s3, elasticsearch]
+# Docs: https://docs.expanso.io/components/inputs/kafka
+#       https://docs.expanso.io/components/outputs/broker
+#       https://docs.expanso.io/components/outputs/aws_s3
+#       https://docs.expanso.io/components/outputs/elasticsearch
+#
+# Usage:
+#   export KAFKA_BROKERS="localhost:9092"
+#   export KAFKA_TOPICS="events"
+#   export S3_BUCKET="my-archive-bucket"
+#   export ES_URLS="https://localhost:9200"
+#   export ES_INDEX="events"
+#   expanso-edge run templates/patterns/fan-out.yaml
+#
+# Configuration:
+#   - KAFKA_BROKERS: Kafka broker addresses (required)
+#   - KAFKA_TOPICS: Topics to consume (required)
+#   - KAFKA_CONSUMER_GROUP: Consumer group ID (default: expanso-fanout)
+#   - S3_BUCKET: Archive S3 bucket (required)
+#   - S3_PREFIX: Object prefix (default: archive/)
+#   - ES_URLS: Elasticsearch URLs (required)
+#   - ES_INDEX: Elasticsearch index (required)
+#   - ES_USERNAME: Elasticsearch username (optional)
+#   - ES_PASSWORD: Elasticsearch password (optional)
+#
+# Pattern:
+#   This demonstrates the fan-out pattern where a single input stream
+#   is duplicated to multiple outputs for different purposes:
+#   - S3 for long-term archival
+#   - Elasticsearch for search and analytics
+
+input:
+  label: "kafka_consumer"
+  kafka:
+    addresses:
+      - "${KAFKA_BROKERS}"
+    topics:
+      - "${KAFKA_TOPICS}"
+    consumer_group: "${KAFKA_CONSUMER_GROUP:expanso-fanout}"
+
+pipeline:
+  processors:
+    - mapping: |
+        # Add routing metadata
+        root = this
+        root.ingested_at = now().ts_format("2006-01-02T15:04:05Z")
+
+output:
+  label: "fan_out_broker"
+  broker:
+    pattern: fan_out
+    outputs:
+      # Output 1: Archive to S3
+      - label: "s3_archive"
+        aws_s3:
+          bucket: "${S3_BUCKET}"
+          path: "${S3_PREFIX:archive/}${!timestamp_unix:2006}/${!timestamp_unix:01}/${!timestamp_unix:02}/data-${!count:timestamp_unix_nano}.json"
+          batching:
+            count: 100
+            period: 10s
+
+      # Output 2: Index to Elasticsearch
+      - label: "elasticsearch_search"
+        elasticsearch:
+          urls:
+            - "${ES_URLS}"
+          index: "${ES_INDEX}"
+          basic_auth:
+            enabled: true
+            username: "${ES_USERNAME:}"
+            password: "${ES_PASSWORD:}"
+          batching:
+            count: 100
+            period: 10s

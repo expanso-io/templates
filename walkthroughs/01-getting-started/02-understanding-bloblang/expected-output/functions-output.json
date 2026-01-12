@@ -1,0 +1,2 @@
+{"id":"<generated-uuid>","timestamp":"2026-01-11T18:40:05Z","event_type":"INFO","message":"User logged in","source_normalized":"auth-service","priority":3,"priority_score":30,"priority_label":"3","original":{...}}
+{"id":"<generated-uuid>","timestamp":"2026-01-11T18:40:05Z","event_type":"ERROR","message":"Database connection failed","source_normalized":"db-service","priority":9,"priority_score":90,"priority_label":"9","original":{...}}

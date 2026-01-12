@@ -1,0 +1,46 @@
+# Template: Send to Splunk HEC
+# Description: Stream logs and events to Splunk HTTP Event Collector
+# Components: stdin → splunk_hec
+# Docs: https://docs.expanso.io/components/inputs/stdin
+#       https://docs.expanso.io/components/outputs/splunk_hec
+#
+# Usage:
+#   export SPLUNK_URL="https://splunk.example.com:8088"
+#   export SPLUNK_TOKEN="your-hec-token"
+#   cat logs.json | expanso-edge run templates/outputs/to-splunk.yaml
+#
+# Configuration:
+#   - SPLUNK_URL: Splunk HEC endpoint URL (required)
+#   - SPLUNK_TOKEN: HEC authentication token (required)
+#   - SPLUNK_INDEX: Target index (default: "main")
+#   - SPLUNK_SOURCE: Event source (default: "expanso")
+#   - SPLUNK_SOURCETYPE: Event sourcetype (default: "_json")
+#   - SPLUNK_SKIP_TLS_VERIFY: Skip TLS cert verification (default: false, use only for dev)
+#   - BATCH_COUNT: Events per batch (default: 100)
+#   - BATCH_PERIOD: Max time per batch (default: 10s)
+#
+# ## SECURITY WARNING
+# - Always use HTTPS for HEC endpoints
+# - Store HEC tokens in secret management systems
+# - Never commit tokens to version control
+# - Use dedicated HEC tokens with index-level ACLs
+# - Enable TLS certificate verification in production
+# - Rotate HEC tokens regularly
+
+input:
+  label: "stdin_reader"
+  stdin:
+    codec: lines
+
+output:
+  label: "splunk_hec_writer"
+  splunk_hec:
+    url: "${SPLUNK_URL}"
+    token: "${SPLUNK_TOKEN}"
+    index: "${SPLUNK_INDEX:main}"
+    source: "${SPLUNK_SOURCE:expanso}"
+    sourcetype: "${SPLUNK_SOURCETYPE:_json}"
+    skip_cert_verify: ${SPLUNK_SKIP_TLS_VERIFY:false}
+    batching:
+      count: ${BATCH_COUNT:100}
+      period: "${BATCH_PERIOD:10s}"

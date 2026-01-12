@@ -1,0 +1,14 @@
+# Walkthrough 01: Your First Pipeline (File Example)
+# This pipeline reads from a file and prints each line to stdout
+
+input:
+  label: "file_reader"
+  file:
+    paths:
+      - "${FILE_PATH:test-data/sample-logs.txt}"
+    codec: lines
+
+output:
+  label: "stdout_writer"
+  stdout:
+    codec: lines

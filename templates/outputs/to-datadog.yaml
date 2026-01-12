@@ -1,0 +1,55 @@
+# Template: Send Metrics and Logs to Datadog
+# Description: Stream metrics, logs, and events to Datadog
+# Components: stdin → datadog_metrics / datadog_logs
+# Docs: https://docs.expanso.io/components/inputs/stdin
+#       https://docs.expanso.io/components/outputs/datadog_metrics
+#       https://docs.expanso.io/components/outputs/http_client
+#
+# Usage:
+#   export DATADOG_API_KEY="your-api-key"
+#   export DATADOG_SITE="datadoghq.com"
+#   cat metrics.json | expanso-edge run templates/outputs/to-datadog.yaml
+#
+# Configuration:
+#   - DATADOG_API_KEY: Datadog API key (required)
+#   - DATADOG_SITE: Datadog site (default: datadoghq.com, use datadoghq.eu for EU)
+#   - DD_SERVICE: Service name tag (default: "expanso")
+#   - DD_ENV: Environment tag (default: "production")
+#   - DD_VERSION: Version tag (default: "1.0")
+#   - BATCH_COUNT: Messages per batch (default: 100)
+#   - BATCH_PERIOD: Max time per batch (default: 10s)
+#
+# ## SECURITY WARNING
+# - Store API keys in secret management systems
+# - Never commit API keys to version control
+# - Use separate API keys per environment
+# - Rotate API keys regularly
+# - Use HTTPS for all Datadog endpoints
+
+input:
+  label: "stdin_reader"
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        # Add unified service tags
+        root = this
+        root.service = "${DD_SERVICE:expanso}"
+        root.env = "${DD_ENV:production}"
+        root.version = "${DD_VERSION:1.0}"
+
+# This example sends logs to Datadog
+# For metrics, adjust the URL and payload format
+output:
+  label: "datadog_logs_writer"
+  http_client:
+    url: "https://http-intake.logs.${DATADOG_SITE:datadoghq.com}/api/v2/logs"
+    verb: POST
+    headers:
+      Content-Type: "application/json"
+      DD-API-KEY: "${DATADOG_API_KEY}"
+    batching:
+      count: ${BATCH_COUNT:100}
+      period: "${BATCH_PERIOD:10s}"

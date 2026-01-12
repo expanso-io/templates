@@ -1,0 +1,76 @@
+# Template: JSON Transformation with Bloblang
+# Description: Transform JSON data using Bloblang mapping language
+# Components: stdin → mapping → stdout
+# Docs: https://docs.expanso.io/components/inputs/stdin
+#       https://docs.expanso.io/components/processors/mapping
+#       https://docs.expanso.io/components/outputs/stdout
+#       https://docs.expanso.io/guides/bloblang/about
+#
+# Usage:
+#   cat input.json | expanso-edge run templates/processors/json-transform.yaml
+#
+# Configuration:
+#   - OUTPUT_CODEC: Output format (default: lines)
+#
+# This template demonstrates common Bloblang transformations:
+#   - Field mapping and renaming
+#   - Type conversion
+#   - Conditional logic
+#   - Error handling with catch
+#   - Field deletion
+#   - Nested object access
+#   - Array manipulation
+
+input:
+  label: "stdin_reader"
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        # Basic field mapping and normalization
+        root.id = this.id catch uuid_v4()
+        root.timestamp = this.timestamp catch now().ts_format("2006-01-02T15:04:05Z")
+
+        # String transformations
+        root.event_type = this.type.uppercase() catch "UNKNOWN"
+        root.message = this.msg catch this.message catch ""
+
+        # Type conversions with error handling
+        root.priority = this.priority.number() catch 0
+        root.count = this.count.number() catch 1
+        root.enabled = this.enabled.bool() catch true
+
+        # Conditional transformations
+        root.severity = if this.priority.number() catch 0 > 7 {
+          "high"
+        } else if this.priority.number() catch 0 > 4 {
+          "medium"
+        } else {
+          "low"
+        }
+
+        # Nested object access
+        root.user_id = this.user.id catch this.userId catch "anonymous"
+        root.user_email = this.user.email catch ""
+
+        # Array handling
+        root.tags = this.tags catch []
+        root.tag_count = (this.tags catch []).length()
+
+        # Computed fields
+        root.is_critical = (this.priority.number() catch 0) > 8 &&
+                           (this.type.lowercase() catch "") == "error"
+
+        # Add processing metadata
+        root.processed_at = now().ts_format("2006-01-02T15:04:05Z")
+        root.pipeline_version = "1.0"
+
+        # Delete sensitive fields (example)
+        # root = this.without("password", "secret", "apiKey")
+
+output:
+  label: "stdout_writer"
+  stdout:
+    codec: "${OUTPUT_CODEC:lines}"

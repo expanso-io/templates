@@ -1,0 +1,6 @@
+192.168.1.100 - - [11/Jan/2026:10:00:00 +0000] "GET /api/v1/users HTTP/1.1" 200 1234 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+10.0.0.50 - - [11/Jan/2026:10:01:15 +0000] "POST /api/v1/auth HTTP/1.1" 201 567 "https://example.com/login" "curl/7.68.0"
+172.16.0.20 - - [11/Jan/2026:10:02:30 +0000] "GET /api/v1/products/123 HTTP/1.1" 404 89 "-" "PostmanRuntime/7.26.8"
+192.168.1.101 - - [11/Jan/2026:10:03:45 +0000] "PUT /api/v1/users/456 HTTP/1.1" 200 345 "-" "axios/0.21.1"
+10.0.0.51 - - [11/Jan/2026:10:05:00 +0000] "DELETE /api/v1/sessions/789 HTTP/1.1" 204 0 "-" "fetch"
+192.168.1.102 - - [11/Jan/2026:10:06:15 +0000] "GET /api/v1/health HTTP/1.1" 200 45 "-" "kube-probe/1.20"

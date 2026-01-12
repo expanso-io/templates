@@ -1,0 +1,102 @@
+# Template: Multi-Cloud Routing by Region
+# Description: Route data to different cloud providers based on region or tenant
+# Components: http_server → switch → [aws_s3, gcp_cloud_storage, azure_blob_storage]
+# Docs: https://docs.expanso.io/components/inputs/http_server
+#       https://docs.expanso.io/components/outputs/switch
+#       https://docs.expanso.io/components/outputs/aws_s3
+#       https://docs.expanso.io/components/outputs/gcp_cloud_storage
+#       https://docs.expanso.io/components/outputs/azure_blob_storage
+#
+# Usage:
+#   export HTTP_PORT="8080"
+#   export AWS_BUCKET="us-data"
+#   export GCP_BUCKET="eu-data"
+#   export AZURE_CONTAINER="asia-data"
+#   export AZURE_STORAGE_ACCOUNT="myaccount"
+#   expanso-edge run templates/patterns/multi-cloud-routing.yaml
+#
+# Configuration:
+#   - HTTP_PORT: HTTP server port (default: 8080)
+#   - AWS_BUCKET: S3 bucket for us/americas region (required)
+#   - AWS_REGION: AWS region (default: us-east-1)
+#   - GCP_PROJECT: GCP project ID (required for GCP)
+#   - GCP_BUCKET: GCS bucket for eu region (required)
+#   - AZURE_STORAGE_ACCOUNT: Azure account for asia (required)
+#   - AZURE_CONTAINER: Azure container for asia (required)
+#
+# Routing Logic:
+#   - region == "us" OR region == "americas" → AWS S3
+#   - region == "eu" OR region == "europe" → GCP Cloud Storage
+#   - region == "asia" OR region == "apac" → Azure Blob Storage
+#   - Default fallback → AWS S3
+#
+# Use Case:
+#   Data residency requirements, compliance, multi-cloud strategy
+
+input:
+  label: "http_webhook"
+  http_server:
+    address: "0.0.0.0:${HTTP_PORT:8080}"
+    path: /data
+    allowed_verbs:
+      - POST
+
+pipeline:
+  processors:
+    - mapping: |
+        # Extract and normalize region
+        root = this
+        root.region = this.region.lowercase() catch "us"
+        root.routed_at = now().ts_format("2006-01-02T15:04:05Z")
+
+output:
+  switch:
+    cases:
+      # Route US/Americas to AWS S3
+      - check: 'this.region == "us" || this.region == "americas"'
+        output:
+          label: "aws_storage"
+          aws_s3:
+            bucket: "${AWS_BUCKET}"
+            path: "data/${!timestamp_unix:2006}/${!timestamp_unix:01}/${!timestamp_unix:02}/data-${!count:timestamp_unix_nano}.json"
+            region: "${AWS_REGION:us-east-1}"
+            batching:
+              count: 100
+              period: 10s
+
+      # Route EU/Europe to GCP Cloud Storage
+      - check: 'this.region == "eu" || this.region == "europe"'
+        output:
+          label: "gcp_storage"
+          gcp_cloud_storage:
+            bucket: "${GCP_BUCKET}"
+            path: "data/${!timestamp_unix:2006}/${!timestamp_unix:01}/${!timestamp_unix:02}/data-${!count:timestamp_unix_nano}.json"
+            credentials_json: "${GCP_CREDENTIALS_FILE:}"
+            batching:
+              count: 100
+              period: 10s
+
+      # Route Asia/APAC to Azure Blob Storage
+      - check: 'this.region == "asia" || this.region == "apac"'
+        output:
+          label: "azure_storage"
+          azure_blob_storage:
+            storage_account: "${AZURE_STORAGE_ACCOUNT}"
+            storage_access_key: "${AZURE_STORAGE_ACCESS_KEY:}"
+            storage_connection_string: "${AZURE_STORAGE_CONNECTION_STRING:}"
+            container: "${AZURE_CONTAINER}"
+            path: "data/${!timestamp_unix:2006}/${!timestamp_unix:01}/${!timestamp_unix:02}/data-${!count:timestamp_unix_nano}.json"
+            batching:
+              count: 100
+              period: 10s
+
+      # Default fallback: AWS S3
+      - output:
+          label: "default_storage"
+          aws_s3:
+            bucket: "${AWS_BUCKET}"
+            path: "fallback/${!timestamp_unix:2006}/${!timestamp_unix:01}/${!timestamp_unix:02}/data-${!count:timestamp_unix_nano}.json"
+            region: "${AWS_REGION:us-east-1}"
+            batching:
+              count: 100
+              period: 10s

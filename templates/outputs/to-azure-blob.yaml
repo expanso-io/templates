@@ -1,0 +1,51 @@
+# Template: Write to Azure Blob Storage
+# Description: Stream data to Azure Blob Storage with partitioning
+# Components: stdin → azure_blob_storage
+# Docs: https://docs.expanso.io/components/inputs/stdin
+#       https://docs.expanso.io/components/outputs/azure_blob_storage
+#
+# Usage:
+#   export AZURE_STORAGE_ACCOUNT="mystorageaccount"
+#   export AZURE_STORAGE_ACCESS_KEY="your-access-key"
+#   export AZURE_CONTAINER="data"
+#   cat data.json | expanso-edge run templates/outputs/to-azure-blob.yaml
+#
+# Configuration:
+#   - AZURE_STORAGE_ACCOUNT: Storage account name (required)
+#   - AZURE_STORAGE_ACCESS_KEY: Account access key (optional if using connection string)
+#   - AZURE_STORAGE_CONNECTION_STRING: Full connection string (optional)
+#   - AZURE_CONTAINER: Blob container name (required)
+#   - BLOB_PREFIX: Blob name prefix (default: "data/")
+#   - BLOB_TYPE: Block or append blob (default: BLOCK)
+#   - BATCH_COUNT: Messages per batch (default: 100)
+#   - BATCH_PERIOD: Max time per batch (default: 10s)
+#
+# ## SECURITY WARNING
+# - Use Azure Managed Identity in production (not access keys)
+# - Store access keys in Azure Key Vault
+# - Never commit credentials to version control
+# - Enable storage account encryption
+# - Use private endpoints for secure access
+# - Rotate access keys regularly
+#
+# Date Partitioning Pattern:
+#   ${BLOB_PREFIX}YYYY/MM/DD/data-TIMESTAMP.json
+#   Example: data/2026/01/11/data-1736637600123456789.json
+
+input:
+  label: "stdin_reader"
+  stdin:
+    codec: lines
+
+output:
+  label: "azure_blob_writer"
+  azure_blob_storage:
+    storage_account: "${AZURE_STORAGE_ACCOUNT}"
+    storage_access_key: "${AZURE_STORAGE_ACCESS_KEY:}"
+    storage_connection_string: "${AZURE_STORAGE_CONNECTION_STRING:}"
+    container: "${AZURE_CONTAINER}"
+    path: "${BLOB_PREFIX:data/}${!timestamp_unix:2006}/${!timestamp_unix:01}/${!timestamp_unix:02}/data-${!count:timestamp_unix_nano}.json"
+    blob_type: "${BLOB_TYPE:BLOCK}"
+    batching:
+      count: ${BATCH_COUNT:100}
+      period: "${BATCH_PERIOD:10s}"

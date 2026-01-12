@@ -1,0 +1,30 @@
+# Walkthrough 05: Structured Data Transformation - Data Enrichment
+
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        root = this
+
+        # Calculate risk score
+        let priority_score = (this.priority.number() catch 0) * 10
+        let failure_score = (this.failed_attempts.number() catch 0) * 5
+        let source_score = if this.source == "external" { 20 } else { 0 }
+        root.risk_score = $priority_score + $failure_score + $source_score
+
+        # Business logic flags
+        root.requires_review = root.risk_score > 50
+        root.auto_approved = root.risk_score < 20 && (this.user.verified.bool() catch false)
+
+        # Timestamp conversion
+        root.processed_at = now().ts_format("2006-01-02T15:04:05Z")
+
+        # Data quality indicators
+        root.data_quality_score = if this.user.id.exists() && this.timestamp.exists() { 100 } else { 50 }
+
+output:
+  stdout:
+    codec: lines

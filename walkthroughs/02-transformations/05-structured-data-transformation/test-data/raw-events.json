@@ -1,0 +1,2 @@
+{"id":"evt-001","priority":8,"failed_attempts":2,"source":"external","user":{"verified":false},"timestamp":"2026-01-11T10:00:00Z"}
+{"id":"evt-002","priority":2,"failed_attempts":0,"source":"internal","user":{"verified":true},"timestamp":"2026-01-11T10:05:00Z"}

@@ -1,0 +1,29 @@
+# Walkthrough 03: From Template to Cloud - S3 Deployment
+# Deploy your pipeline to AWS S3 with date partitioning
+
+input:
+  label: "stdin_reader"
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        # Add metadata for tracking
+        root = this
+        root.processed_at = now().ts_format("2006-01-02T15:04:05Z")
+        root.pipeline_version = "1.0"
+
+output:
+  label: "s3_writer"
+  aws_s3:
+    bucket: "${S3_BUCKET}"
+    path: "${S3_PREFIX:data/}${!timestamp_unix:2006}/${!timestamp_unix:01}/${!timestamp_unix:02}/data-${!count:timestamp_unix_nano}.json"
+    region: "${AWS_REGION:us-east-1}"
+    credentials:
+      profile: "${AWS_PROFILE:}"
+      id: "${AWS_ACCESS_KEY_ID:}"
+      secret: "${AWS_SECRET_ACCESS_KEY:}"
+    batching:
+      count: 100
+      period: 10s

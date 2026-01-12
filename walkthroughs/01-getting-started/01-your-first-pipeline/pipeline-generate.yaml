@@ -1,0 +1,22 @@
+# Walkthrough 01: Your First Pipeline (Generate Example)
+# This pipeline generates synthetic test data and prints it to stdout
+
+input:
+  label: "test_data_generator"
+  generate:
+    interval: "${GEN_INTERVAL:1s}"
+    count: ${GEN_COUNT:5}
+    mapping: |
+      root = {
+        "id": uuid_v4(),
+        "timestamp": now().ts_format("2006-01-02T15:04:05Z"),
+        "sensor_id": "sensor-" + range(1, 100).string(),
+        "temperature": range(15, 35) + (random_int() % 100) / 100.0,
+        "humidity": range(30, 80) + (random_int() % 100) / 100.0,
+        "status": ["ok", "warning", "critical"].index(random_int() % 3)
+      }
+
+output:
+  label: "stdout_writer"
+  stdout:
+    codec: lines

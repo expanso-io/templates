@@ -1,0 +1,53 @@
+# Template: Write to S3 with Partitioning
+# Description: Stream data to AWS S3 with date-based partitioning
+# Components: stdin → aws_s3
+# Docs: https://docs.expanso.io/components/inputs/stdin
+#       https://docs.expanso.io/components/outputs/aws_s3
+#
+# Usage:
+#   export S3_BUCKET="my-bucket"
+#   export S3_PREFIX="data/"
+#   export AWS_REGION="us-east-1"
+#   cat data.json | expanso-edge run templates/outputs/to-s3.yaml
+#
+# Configuration:
+#   - S3_BUCKET: S3 bucket name (required)
+#   - S3_PREFIX: Object key prefix (default: "data/")
+#   - AWS_REGION: AWS region (default: us-east-1)
+#   - AWS_PROFILE: AWS credentials profile (default: "")
+#   - AWS_ACCESS_KEY_ID: AWS access key (optional, uses AWS SDK chain if not set)
+#   - AWS_SECRET_ACCESS_KEY: AWS secret key (optional)
+#   - BATCH_COUNT: Messages per batch (default: 100)
+#   - BATCH_PERIOD: Max time per batch (default: 10s)
+#   - CONTENT_TYPE: S3 object content type (default: application/json)
+#
+# ## SECURITY WARNING
+# - Store credentials in AWS config/credentials files or use IAM roles
+# - Never commit credentials to version control
+# - Use environment variables or secret management systems in production
+# - Enable S3 bucket encryption and access logging
+# - Use least-privilege IAM policies (s3:PutObject only)
+#
+# Date Partitioning Pattern:
+#   ${S3_PREFIX}YYYY/MM/DD/data-TIMESTAMP.json
+#   Example: data/2026/01/11/data-1736637600123456789.json
+
+input:
+  label: "stdin_reader"
+  stdin:
+    codec: lines
+
+output:
+  label: "s3_writer"
+  aws_s3:
+    bucket: "${S3_BUCKET}"
+    path: "${S3_PREFIX:data/}${!timestamp_unix:2006}/${!timestamp_unix:01}/${!timestamp_unix:02}/data-${!count:timestamp_unix_nano}.json"
+    region: "${AWS_REGION:us-east-1}"
+    credentials:
+      profile: "${AWS_PROFILE:}"
+      id: "${AWS_ACCESS_KEY_ID:}"
+      secret: "${AWS_SECRET_ACCESS_KEY:}"
+    content_type: "${CONTENT_TYPE:application/json}"
+    batching:
+      count: ${BATCH_COUNT:100}
+      period: "${BATCH_PERIOD:10s}"

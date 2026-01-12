@@ -1,0 +1,85 @@
+# Template: JSON Schema Validation
+# Description: Validate JSON messages against a JSON Schema
+# Components: stdin → json_schema → stdout
+# Docs: https://docs.expanso.io/components/inputs/stdin
+#       https://docs.expanso.io/components/processors/json_schema
+#       https://docs.expanso.io/components/outputs/stdout
+#
+# Usage:
+#   export SCHEMA_FILE="path/to/schema.json"
+#   cat data.json | expanso-edge run templates/processors/schema-validation.yaml
+#
+# Configuration:
+#   - SCHEMA_FILE: Path to JSON Schema file (optional, uses inline schema if not set)
+#   - OUTPUT_CODEC: Output format (default: lines)
+#
+# JSON Schema:
+#   - Defines expected structure and types
+#   - Validates required fields, types, formats
+#   - Invalid messages are rejected (or sent to error output)
+#
+# This template includes an example schema for sensor events.
+# Replace with your own schema or use SCHEMA_FILE to load externally.
+
+input:
+  label: "stdin_reader"
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - json_schema:
+        # Option 1: Inline schema (shown below)
+        # Option 2: Load from file with schema_path: "${SCHEMA_FILE}"
+        schema: |
+          {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
+            "required": ["id", "timestamp", "event_type"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "event_type": {
+                "type": "string",
+                "enum": ["info", "warning", "error", "critical"]
+              },
+              "user_id": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "priority": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10
+              }
+            },
+            "additionalProperties": true
+          }
+
+    # Add validation metadata
+    - mapping: |
+        root = this
+        root.validated_at = now().ts_format("2006-01-02T15:04:05Z")
+        root.schema_version = "1.0"
+
+output:
+  label: "stdout_writer"
+  stdout:
+    codec: "${OUTPUT_CODEC:lines}"

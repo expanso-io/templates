@@ -1,0 +1,5 @@
+{"id": "evt-001", "type": "INFO", "msg": "User logged in", "src": "auth-service", "priority": 3}
+{"type": "ERROR", "message": "Database connection failed", "source": "db-service", "priority": 9}
+{"id": "evt-003", "type": "Warning", "msg": "  High memory usage  ", "priority": "6"}
+{"type": "info", "message": "Batch job completed", "count": 1523, "tags": ["batch", "success"]}
+{"id": "evt-005", "type": "ERROR", "message": "API timeout", "userId": "user-789", "priority": 8, "enabled": "true"}

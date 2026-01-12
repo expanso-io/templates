@@ -1,0 +1,5 @@
+2026-01-11T10:00:00Z INFO Application started
+1736596815 WARN High CPU usage
+2026-01-11T10:01:30Z ERROR Connection failed
+This line doesn't match any pattern
+1736596845 INFO Recovery complete

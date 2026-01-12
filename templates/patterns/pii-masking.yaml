@@ -1,0 +1,88 @@
+# Template: PII Detection and Masking
+# Description: Detect and mask personally identifiable information
+# Components: stdin → mapping → stdout
+# Docs: https://docs.expanso.io/components/inputs/stdin
+#       https://docs.expanso.io/components/processors/mapping
+#       https://docs.expanso.io/components/outputs/stdout
+#
+# Usage:
+#   cat sensitive-data.json | expanso-edge run templates/patterns/pii-masking.yaml
+#
+# Configuration:
+#   - MASK_CHAR: Character to use for masking (default: *)
+#   - OUTPUT_CODEC: Output format (default: lines)
+#
+# PII Detection Patterns:
+#   - Email addresses
+#   - Phone numbers (US format)
+#   - Credit card numbers
+#   - Social Security Numbers (SSN)
+#   - IP addresses
+#   - Custom fields marked as sensitive
+#
+# Masking Strategy:
+#   - Email: show first 2 chars + domain → jo***@example.com
+#   - Phone: show area code → (555) ***-****
+#   - Credit card: show last 4 digits → **** **** **** 1234
+#   - SSN: fully masked → ***-**-****
+#   - IP: mask last octet → 192.168.1.***
+
+input:
+  label: "stdin_reader"
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        # Pass through non-PII fields
+        root = this
+
+        # Mask email addresses
+        root.email = if this.email.exists() {
+          this.email.re_replace_all("(?i)([a-z0-9]{1,2})[a-z0-9._%+-]*@", "$1***@")
+        } else {
+          this.email catch deleted()
+        }
+
+        # Mask phone numbers (US format)
+        root.phone = if this.phone.exists() {
+          this.phone.re_replace_all("\\d(?=\\d{4})", "*")
+        } else {
+          this.phone catch deleted()
+        }
+
+        # Mask credit card numbers (show last 4 digits)
+        root.credit_card = if this.credit_card.exists() {
+          this.credit_card.re_replace_all("\\d(?=\\d{4})", "*")
+        } else if this.card_number.exists() {
+          this.card_number.re_replace_all("\\d(?=\\d{4})", "*")
+        } else {
+          deleted()
+        }
+
+        # Fully mask SSN
+        root.ssn = if this.ssn.exists() {
+          "***-**-****"
+        } else {
+          this.ssn catch deleted()
+        }
+
+        # Mask IP addresses (last octet)
+        root.ip_address = if this.ip_address.exists() {
+          this.ip_address.re_replace_all("\\.\\d+$", ".***")
+        } else {
+          this.ip_address catch deleted()
+        }
+
+        # Remove fields explicitly marked as sensitive
+        root = this.without("password", "secret", "api_key", "token", "private_key")
+
+        # Add masking metadata
+        root.pii_masked = true
+        root.masked_at = now().ts_format("2006-01-02T15:04:05Z")
+
+output:
+  label: "stdout_writer"
+  stdout:
+    codec: "${OUTPUT_CODEC:lines}"

@@ -1,0 +1,3 @@
+{"id":"evt-001","type":"INFO","msg":"User logged in","src":"auth-service","priority":3,"severity":"low","category":"informational","requires_action":false}
+{"type":"ERROR","message":"Database connection failed","source":"db-service","priority":9,"severity":"high","category":"incident","requires_action":true}
+{"id":"evt-003","type":"Warning","msg":"  High memory usage  ","priority":"6","severity":"medium","category":"alert","requires_action":false}

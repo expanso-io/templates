@@ -1,0 +1,33 @@
+# Walkthrough 04: Parsing Logs at the Edge - HTTP Access Logs
+
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - grok:
+        patterns:
+          - '%{IPORHOST:client_ip} %{USER:ident} %{USER:auth} \[%{HTTPDATE:timestamp}\] "%{WORD:method} %{URIPATHPARAM:request} HTTP/%{NUMBER:http_version}" %{NUMBER:status} %{NUMBER:bytes} "%{DATA:referrer}" "%{DATA:user_agent}"'
+        remove_empty_values: true
+
+    - mapping: |
+        root = this
+        root.status_code = this.status.number() catch 0
+        root.status_category = if this.status_code >= 500 {
+          "server_error"
+        } else if this.status_code >= 400 {
+          "client_error"
+        } else if this.status_code >= 300 {
+          "redirect"
+        } else if this.status_code >= 200 {
+          "success"
+        } else {
+          "informational"
+        }
+        root.bytes_sent = this.bytes.number() catch 0
+        root.parsed_at = now().ts_format("2006-01-02T15:04:05Z")
+
+output:
+  stdout:
+    codec: lines

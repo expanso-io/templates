@@ -1,0 +1,76 @@
+# Template: Grok Log Parsing
+# Description: Parse unstructured log lines into structured JSON using Grok patterns
+# Components: stdin → grok → stdout
+# Docs: https://docs.expanso.io/components/inputs/stdin
+#       https://docs.expanso.io/components/processors/grok
+#       https://docs.expanso.io/components/outputs/stdout
+#
+# Usage:
+#   cat app.log | expanso-edge run templates/processors/log-parser.yaml
+#
+# Configuration:
+#   - LOG_PATTERN: Grok pattern override (default: common log format)
+#   - OUTPUT_CODEC: Output format (default: lines)
+#
+# Grok Patterns:
+#   Grok uses named capture groups to extract structured data from text.
+#   Common patterns: %{IP:client}, %{TIMESTAMP_ISO8601:timestamp}, %{LOGLEVEL:level}
+#
+# This template demonstrates:
+#   - Parsing common log formats (Apache, Nginx, app logs)
+#   - Extracting timestamp, level, message, metadata
+#   - Multiple pattern support with fallback
+#   - Post-processing with Bloblang
+
+input:
+  label: "stdin_reader"
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    # Parse with Grok patterns
+    - grok:
+        patterns:
+          # Common application log format:
+          # 2026-01-11T10:00:00Z INFO Application started successfully
+          - '%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:level} %{GREEDYDATA:message}'
+
+          # Alternative format with brackets:
+          # [2026-01-11T10:00:00Z] INFO - Application started
+          - '\[%{TIMESTAMP_ISO8601:timestamp}\] %{LOGLEVEL:level} - %{GREEDYDATA:message}'
+
+          # Apache/Nginx access log format:
+          # 192.168.1.1 - - [11/Jan/2026:10:00:00 +0000] "GET /api HTTP/1.1" 200 1234
+          - '%{IPORHOST:client_ip} %{USER:ident} %{USER:auth} \[%{HTTPDATE:timestamp}\] "%{WORD:method} %{URIPATHPARAM:request} HTTP/%{NUMBER:http_version}" %{NUMBER:status_code} %{NUMBER:bytes}'
+
+        # Keep unparsed logs for debugging
+        remove_empty_values: true
+
+    # Post-process parsed fields with Bloblang
+    - mapping: |
+        # Pass through all parsed fields
+        root = this
+
+        # Normalize log level
+        root.level = this.level.uppercase() catch "INFO"
+
+        # Add severity score
+        root.severity_score = if this.level.uppercase() catch "INFO" == "ERROR" || this.level.uppercase() catch "INFO" == "CRITICAL" {
+          3
+        } else if this.level.uppercase() catch "INFO" == "WARN" || this.level.uppercase() catch "INFO" == "WARNING" {
+          2
+        } else {
+          1
+        }
+
+        # Add processing metadata
+        root.parsed_at = now().ts_format("2006-01-02T15:04:05Z")
+
+        # For HTTP logs, add request info
+        root.http_success = (this.status_code.number() catch 0) >= 200 && (this.status_code.number() catch 0) < 400
+
+output:
+  label: "stdout_writer"
+  stdout:
+    codec: "${OUTPUT_CODEC:lines}"

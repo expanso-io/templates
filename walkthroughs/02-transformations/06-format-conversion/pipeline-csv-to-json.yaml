@@ -1,0 +1,27 @@
+input:
+  stdin:
+    codec: csv
+    csv:
+      delimiter: ","
+      lazy_quotes: false
+
+pipeline:
+  processors:
+    - mapping: |
+        # CSV processor outputs JSON with string values
+        # Apply type conversions for proper data types
+
+        root.id = this.id
+        root.user_id = this.user_id.number() catch 0
+        root.email = this.email
+        root.amount = this.amount.number() catch 0.0
+        root.enabled = this.enabled.bool() catch false
+        root.created_at = this.created_at
+
+        # Add metadata
+        root.converted_at = now().ts_format("2006-01-02T15:04:05Z")
+        root.source_format = "csv"
+
+output:
+  stdout:
+    codec: lines

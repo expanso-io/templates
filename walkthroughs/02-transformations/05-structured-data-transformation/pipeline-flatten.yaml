@@ -1,0 +1,27 @@
+# Walkthrough 05: Structured Data Transformation - Flatten Nested Objects
+
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        # Flatten nested user object
+        root.user_id = this.user.id catch ""
+        root.user_name = this.user.profile.name catch ""
+        root.user_email = this.user.profile.email catch ""
+        root.user_role = this.user.role catch "guest"
+
+        # Flatten metadata
+        root.event_id = this.id
+        root.timestamp = this.timestamp
+        root.event_type = this.type
+
+        # Extract from arrays
+        root.primary_tag = (this.tags catch []).index(0) catch "untagged"
+        root.tag_count = (this.tags catch []).length()
+
+output:
+  stdout:
+    codec: lines

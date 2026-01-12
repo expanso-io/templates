@@ -1,0 +1,3 @@
+{"id":"evt-001","type":"INFO","message":"User logged in","priority":3,"count":1,"enabled":true,"tags":[],"metadata":{},"user_id":"anonymous","timestamp":"2026-01-11T18:40:10Z","is_critical":false}
+{"id":"<generated-uuid>","type":"ERROR","message":"Database connection failed","priority":9,"count":1,"enabled":true,"tags":[],"metadata":{},"user_id":"anonymous","timestamp":"2026-01-11T18:40:10Z","is_critical":true}
+{"id":"evt-005","type":"ERROR","message":"API timeout","priority":8,"count":1,"enabled":true,"tags":[],"metadata":{},"user_id":"user-789","timestamp":"2026-01-11T18:40:10Z","is_critical":false}

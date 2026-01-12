@@ -1,0 +1,17 @@
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - json_schema:
+        schema_path: "schemas/user-event-schema.json"
+
+    - mapping: |
+        root = this
+        root.validated_at = now().ts_format("2006-01-02T15:04:05Z")
+        root.schema_version = "1.0"
+
+output:
+  stdout:
+    codec: lines

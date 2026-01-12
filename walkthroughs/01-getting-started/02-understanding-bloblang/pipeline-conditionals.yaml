@@ -1,0 +1,36 @@
+# Walkthrough 02: Understanding Bloblang - Conditional Logic
+
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        # Preserve original fields
+        root = this
+
+        # Add severity based on priority
+        root.severity = if this.priority.number() catch 0 > 7 {
+          "high"
+        } else if this.priority.number() catch 0 > 4 {
+          "medium"
+        } else {
+          "low"
+        }
+
+        # Add category based on event type
+        root.category = if this.type.lowercase() catch "" == "error" {
+          "incident"
+        } else if this.type.lowercase() catch "" == "warning" {
+          "alert"
+        } else {
+          "informational"
+        }
+
+        # Add requires_action flag
+        root.requires_action = this.severity == "high" || this.category == "incident"
+
+output:
+  stdout:
+    codec: lines

@@ -1,0 +1,47 @@
+# Template: Stream to BigQuery
+# Description: Write data to Google Cloud BigQuery table
+# Components: stdin → gcp_bigquery
+# Docs: https://docs.expanso.io/components/inputs/stdin
+#       https://docs.expanso.io/components/outputs/gcp_bigquery
+#
+# Usage:
+#   export GCP_PROJECT="my-project"
+#   export BQ_DATASET="my_dataset"
+#   export BQ_TABLE="events"
+#   cat data.json | expanso-edge run templates/outputs/to-bigquery.yaml
+#
+# Configuration:
+#   - GCP_PROJECT: GCP project ID (required)
+#   - BQ_DATASET: BigQuery dataset name (required)
+#   - BQ_TABLE: BigQuery table name (required)
+#   - GCP_CREDENTIALS_FILE: Path to service account JSON (optional, uses ADC)
+#   - BATCH_COUNT: Messages per batch (default: 100)
+#   - BATCH_PERIOD: Max time per batch (default: 10s)
+#   - AUTO_CREATE_TABLE: Create table if not exists (default: true)
+#
+# ## SECURITY WARNING
+# - Use service accounts with minimal permissions (roles/bigquery.dataEditor)
+# - Store credentials in secure locations, never in version control
+# - Use Workload Identity for GKE/Cloud Run deployments
+# - Enable BigQuery audit logging
+#
+# Table Schema:
+#   Data is auto-discovered from JSON structure when AUTO_CREATE_TABLE=true
+#   For production, pre-create tables with explicit schemas
+
+input:
+  label: "stdin_reader"
+  stdin:
+    codec: lines
+
+output:
+  label: "bigquery_writer"
+  gcp_bigquery:
+    project: "${GCP_PROJECT}"
+    dataset: "${BQ_DATASET}"
+    table: "${BQ_TABLE}"
+    credentials_json: "${GCP_CREDENTIALS_FILE:}"
+    auto_create: ${AUTO_CREATE_TABLE:true}
+    batching:
+      count: ${BATCH_COUNT:100}
+      period: "${BATCH_PERIOD:10s}"

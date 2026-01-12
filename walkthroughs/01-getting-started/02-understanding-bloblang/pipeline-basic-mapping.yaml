@@ -1,0 +1,19 @@
+# Walkthrough 02: Understanding Bloblang - Basic Field Mapping
+
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        # Basic field mapping and normalization
+        root.event_id = this.id catch uuid_v4()
+        root.event_type = this.type.lowercase() catch "unknown"
+        root.message = this.msg catch this.message catch ""
+        root.source = this.src catch this.source catch "unknown"
+        root.processed_at = now().ts_format("2006-01-02T15:04:05Z")
+
+output:
+  stdout:
+    codec: lines

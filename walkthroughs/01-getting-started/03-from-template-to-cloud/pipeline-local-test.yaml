@@ -1,0 +1,20 @@
+# Walkthrough 03: From Template to Cloud - Local Testing Version
+# Test your transformations locally before deploying to S3
+
+input:
+  label: "stdin_reader"
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        # Add metadata for tracking
+        root = this
+        root.processed_at = now().ts_format("2006-01-02T15:04:05Z")
+        root.pipeline_version = "1.0"
+
+output:
+  label: "stdout_writer"
+  stdout:
+    codec: lines

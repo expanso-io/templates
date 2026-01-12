@@ -1,0 +1,4 @@
+id,user_id,email,amount,enabled,created_at
+evt-001,12345,alice@example.com,99.50,true,2024-01-15T10:00:00Z
+evt-002,67890,bob@example.com,150.25,false,2024-01-15T11:30:00Z
+evt-003,11223,charlie@example.com,75.00,true,2024-01-15T12:45:00Z

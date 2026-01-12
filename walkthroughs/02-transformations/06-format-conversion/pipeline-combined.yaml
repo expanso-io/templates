@@ -1,0 +1,31 @@
+input:
+  stdin:
+    codec: csv
+    csv:
+      delimiter: ","
+
+pipeline:
+  processors:
+    # Step 1: Type conversion
+    - mapping: |
+        root.id = this.id
+        root.user_id = this.user_id.number() catch 0
+        root.email = this.email
+        root.amount = this.amount.number() catch 0.0
+        root.enabled = this.enabled.bool() catch false
+        root.created_at = this.created_at
+        root.converted_at = now().ts_format("2006-01-02T15:04:05Z")
+
+    # Step 2: Schema validation
+    - json_schema:
+        schema_path: "schemas/user-event-schema.json"
+
+    # Step 3: Add validation metadata
+    - mapping: |
+        root = this
+        root.validated_at = now().ts_format("2006-01-02T15:04:05Z")
+        root.quality_checked = true
+
+output:
+  stdout:
+    codec: lines

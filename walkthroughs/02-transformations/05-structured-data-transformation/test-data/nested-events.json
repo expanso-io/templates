@@ -1,0 +1,2 @@
+{"id":"evt-001","type":"login","timestamp":"2026-01-11T10:00:00Z","user":{"id":"user-123","role":"admin","profile":{"name":"Alice Admin","email":"alice@example.com"}},"tags":["authentication","success"]}
+{"id":"evt-002","type":"error","timestamp":"2026-01-11T10:05:00Z","user":{"id":"user-456","role":"user","profile":{"name":"Bob User"}},"tags":["database","timeout"]}

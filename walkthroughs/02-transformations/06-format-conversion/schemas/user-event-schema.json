@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["id", "user_id", "email", "amount"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^evt-[0-9]+$"
+    },
+    "user_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "amount": {
+      "type": "number",
+      "minimum": 0
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,4 @@
+{"type":"error","severity":9,"user":{"role":"admin"},"message":"Critical system failure"}
+{"type":"error","severity":4,"user":{"role":"user"},"message":"Connection timeout"}
+{"type":"warning","severity":5,"user":{"role":"admin"},"message":"High memory usage"}
+{"type":"info","severity":1,"user":{"role":"user"},"message":"User login"}

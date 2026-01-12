@@ -1,0 +1,10 @@
+2026-01-11T10:00:00Z INFO Application started successfully
+2026-01-11T10:01:23Z ERROR NullPointerException in UserService
+  at com.example.UserService.getUser(UserService.java:45)
+  at com.example.AuthController.login(AuthController.java:23)
+  at com.example.WebApp.main(WebApp.java:10)
+2026-01-11T10:02:45Z WARN High memory usage detected: 85%
+2026-01-11T10:05:12Z ERROR Database connection timeout
+  at com.example.DatabasePool.getConnection(DatabasePool.java:67)
+  at com.example.UserRepository.findById(UserRepository.java:34)
+2026-01-11T10:10:30Z INFO System recovered, connections restored

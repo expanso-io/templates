@@ -1,0 +1,47 @@
+# Template: Synthetic Test Data Generator
+# Description: Generate synthetic data for testing and development
+# Components: generate → stdout
+# Docs: https://docs.expanso.io/components/inputs/generate
+#       https://docs.expanso.io/components/outputs/stdout
+#
+# Usage:
+#   export GEN_INTERVAL="1s"
+#   export GEN_COUNT="100"
+#   expanso-edge run templates/inputs/generate-test-data.yaml
+#
+# Configuration:
+#   - GEN_INTERVAL: Time between messages (default: 1s, use 0 for max speed)
+#   - GEN_COUNT: Total messages to generate (default: 0 = infinite)
+#   - GEN_MAPPING: Bloblang expression for custom data (default: sensor payload)
+#   - OUTPUT_CODEC: Output format (default: lines)
+#
+# Examples:
+#   # Generate 10 messages as fast as possible:
+#   GEN_INTERVAL=0 GEN_COUNT=10 expanso-edge run templates/inputs/generate-test-data.yaml
+#
+#   # Generate infinite stream at 1 msg/sec:
+#   GEN_INTERVAL=1s GEN_COUNT=0 expanso-edge run templates/inputs/generate-test-data.yaml
+
+input:
+  label: "test_data_generator"
+  generate:
+    interval: "${GEN_INTERVAL:1s}"
+    count: ${GEN_COUNT:0}
+    mapping: |
+      root = {
+        "id": uuid_v4(),
+        "timestamp": now().ts_format("2006-01-02T15:04:05.999Z07:00"),
+        "sensor_id": "sensor-" + range(1, 100).string(),
+        "temperature": range(15, 35) + (random_int() % 100) / 100.0,
+        "humidity": range(30, 80) + (random_int() % 100) / 100.0,
+        "location": {
+          "lat": 37.7749 + (random_int() % 1000 - 500) / 10000.0,
+          "lon": -122.4194 + (random_int() % 1000 - 500) / 10000.0
+        },
+        "status": ["ok", "warning", "critical"].index(random_int() % 3)
+      }
+
+output:
+  label: "stdout_writer"
+  stdout:
+    codec: "${OUTPUT_CODEC:lines}"

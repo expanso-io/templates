@@ -1,0 +1,24 @@
+# Walkthrough 04: Parsing Logs at the Edge - With Fallback Handling
+
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - grok:
+        patterns:
+          # Primary: ISO timestamp
+          - '%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:level} %{GREEDYDATA:message}'
+          # Fallback: Unix timestamp
+          - '%{NUMBER:unix_timestamp} %{LOGLEVEL:level} %{GREEDYDATA:message}'
+        remove_empty_values: true
+
+    - mapping: |
+        root = this
+        root.parse_error = !this.timestamp.exists() && !this.unix_timestamp.exists()
+        root.parsed_at = now().ts_format("2006-01-02T15:04:05Z")
+
+output:
+  stdout:
+    codec: lines

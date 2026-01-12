@@ -1,0 +1,28 @@
+# Walkthrough 04: Parsing Logs at the Edge - Application Logs
+
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - grok:
+        patterns:
+          - '%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:level} %{GREEDYDATA:message}'
+        remove_empty_values: true
+
+    - mapping: |
+        root = this
+        root.level = this.level.uppercase() catch "INFO"
+        root.severity = if this.level.uppercase() catch "INFO" == "ERROR" || this.level.uppercase() catch "INFO" == "CRITICAL" {
+          3
+        } else if this.level.uppercase() catch "INFO" == "WARN" {
+          2
+        } else {
+          1
+        }
+        root.parsed_at = now().ts_format("2006-01-02T15:04:05Z")
+
+output:
+  stdout:
+    codec: lines

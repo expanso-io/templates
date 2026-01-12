@@ -1,0 +1,30 @@
+# Walkthrough 05: Structured Data Transformation - Array Operations
+
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        root.event_id = this.id
+
+        # Filter high priority items
+        root.high_priority_items = (this.items catch []).filter(item -> (item.priority.number() catch 0) > 7)
+
+        # Map to IDs only
+        root.item_ids = (this.items catch []).map_each(item -> item.id catch "")
+
+        # Count operations
+        root.total_items = (this.items catch []).length()
+        root.high_priority_count = root.high_priority_items.length()
+
+        # Check contains
+        root.has_urgent_tag = (this.tags catch []).contains("urgent")
+
+        # Sum values
+        root.total_amount = (this.items catch []).map_each(item -> item.amount.number() catch 0).sum()
+
+output:
+  stdout:
+    codec: lines

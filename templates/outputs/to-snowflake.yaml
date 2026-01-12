@@ -1,0 +1,61 @@
+# Template: Load into Snowflake
+# Description: Stream data to Snowflake data warehouse
+# Components: stdin → snowflake
+# Docs: https://docs.expanso.io/components/inputs/stdin
+#       https://docs.expanso.io/components/outputs/snowflake
+#
+# Usage:
+#   export SNOWFLAKE_ACCOUNT="myaccount"
+#   export SNOWFLAKE_USER="myuser"
+#   export SNOWFLAKE_PASSWORD="mypassword"
+#   export SNOWFLAKE_DATABASE="MYDB"
+#   export SNOWFLAKE_SCHEMA="PUBLIC"
+#   export SNOWFLAKE_TABLE="EVENTS"
+#   cat data.json | expanso-edge run templates/outputs/to-snowflake.yaml
+#
+# Configuration:
+#   - SNOWFLAKE_ACCOUNT: Snowflake account identifier (required)
+#   - SNOWFLAKE_USER: Username for authentication (required)
+#   - SNOWFLAKE_PASSWORD: Password for authentication (required)
+#   - SNOWFLAKE_DATABASE: Target database (required)
+#   - SNOWFLAKE_SCHEMA: Target schema (default: PUBLIC)
+#   - SNOWFLAKE_TABLE: Target table (required)
+#   - SNOWFLAKE_WAREHOUSE: Compute warehouse (default: COMPUTE_WH)
+#   - SNOWFLAKE_ROLE: User role (default: "")
+#   - BATCH_COUNT: Messages per batch (default: 100)
+#   - BATCH_PERIOD: Max time per batch (default: 10s)
+#
+# ## SECURITY WARNING
+# - Use key-pair authentication for production (not passwords)
+# - Store credentials in secret management systems
+# - Never commit credentials to version control
+# - Use network policies to restrict access
+# - Enable MFA for Snowflake accounts
+# - Use service accounts with minimal privileges
+
+input:
+  label: "stdin_reader"
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        # Snowflake expects VARIANT column for JSON data
+        # Map your data structure as needed
+        root = this
+
+output:
+  label: "snowflake_writer"
+  snowflake:
+    account: "${SNOWFLAKE_ACCOUNT}"
+    user: "${SNOWFLAKE_USER}"
+    password: "${SNOWFLAKE_PASSWORD}"
+    database: "${SNOWFLAKE_DATABASE}"
+    schema: "${SNOWFLAKE_SCHEMA:PUBLIC}"
+    table: "${SNOWFLAKE_TABLE}"
+    warehouse: "${SNOWFLAKE_WAREHOUSE:COMPUTE_WH}"
+    role: "${SNOWFLAKE_ROLE:}"
+    batching:
+      count: ${BATCH_COUNT:100}
+      period: "${BATCH_PERIOD:10s}"

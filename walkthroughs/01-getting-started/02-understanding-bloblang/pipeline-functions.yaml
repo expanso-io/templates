@@ -1,0 +1,29 @@
+# Walkthrough 02: Understanding Bloblang - Using Functions
+
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        # Generate new fields with functions
+        root.id = uuid_v4()
+        root.timestamp = now().ts_format("2006-01-02T15:04:05Z")
+
+        # String functions
+        root.event_type = this.type.uppercase() catch "UNKNOWN"
+        root.message = this.message.trim() catch ""
+        root.source_normalized = this.source.lowercase().trim() catch "unknown"
+
+        # Type conversion and math
+        root.priority = this.priority.number() catch 0
+        root.priority_score = (this.priority.number() catch 0) * 10
+        root.priority_label = this.priority.string() catch "0"
+
+        # Keep original data for reference
+        root.original = this
+
+output:
+  stdout:
+    codec: lines

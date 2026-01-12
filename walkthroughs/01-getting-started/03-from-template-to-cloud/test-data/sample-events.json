@@ -1,0 +1,10 @@
+{"event_id": "evt-001", "user_id": "user-123", "action": "login", "timestamp": "2026-01-11T10:00:00Z", "ip_address": "192.168.1.100"}
+{"event_id": "evt-002", "user_id": "user-456", "action": "view_page", "timestamp": "2026-01-11T10:01:30Z", "page": "/dashboard"}
+{"event_id": "evt-003", "user_id": "user-123", "action": "update_profile", "timestamp": "2026-01-11T10:05:15Z", "fields_changed": ["email", "phone"]}
+{"event_id": "evt-004", "user_id": "user-789", "action": "purchase", "timestamp": "2026-01-11T10:10:00Z", "amount": 49.99, "currency": "USD"}
+{"event_id": "evt-005", "user_id": "user-456", "action": "logout", "timestamp": "2026-01-11T10:15:45Z"}
+{"event_id": "evt-006", "user_id": "user-321", "action": "login", "timestamp": "2026-01-11T10:20:00Z", "ip_address": "10.0.0.50"}
+{"event_id": "evt-007", "user_id": "user-321", "action": "search", "timestamp": "2026-01-11T10:22:30Z", "query": "user analytics"}
+{"event_id": "evt-008", "user_id": "user-789", "action": "view_page", "timestamp": "2026-01-11T10:25:00Z", "page": "/products"}
+{"event_id": "evt-009", "user_id": "user-123", "action": "api_call", "timestamp": "2026-01-11T10:30:00Z", "endpoint": "/api/v1/data"}
+{"event_id": "evt-010", "user_id": "user-456", "action": "login", "timestamp": "2026-01-11T10:35:00Z", "ip_address": "172.16.0.20"}

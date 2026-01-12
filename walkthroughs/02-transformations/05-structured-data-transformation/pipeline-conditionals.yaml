@@ -1,0 +1,32 @@
+# Walkthrough 05: Structured Data Transformation - Complex Conditionals
+
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        root = this
+
+        # Multi-level conditionals
+        root.category = if this.type == "error" && (this.severity.number() catch 0) > 7 {
+          "critical_incident"
+        } else if this.type == "error" {
+          "standard_error"
+        } else if this.type == "warning" && this.user.role == "admin" {
+          "admin_warning"
+        } else {
+          "informational"
+        }
+
+        # Boolean logic
+        root.requires_action = (this.type == "error" || this.type == "critical") &&
+                               (this.severity.number() catch 0) > 5
+
+        # Null-safe checks
+        root.user_verified = this.user.verified.bool() catch false
+
+output:
+  stdout:
+    codec: lines

@@ -1,0 +1,81 @@
+# Template: Dead Letter Queue with Retries
+# Description: Retry failed messages with exponential backoff, then route to DLQ
+# Components: kafka → try → [output, dlq kafka topic]
+# Docs: https://docs.expanso.io/components/inputs/kafka
+#       https://docs.expanso.io/components/outputs/try
+#       https://docs.expanso.io/components/outputs/http_client
+#
+# Usage:
+#   export KAFKA_BROKERS="localhost:9092"
+#   export KAFKA_INPUT_TOPIC="events"
+#   export KAFKA_DLQ_TOPIC="events-dlq"
+#   export OUTPUT_API_URL="https://api.example.com/events"
+#   expanso-edge run templates/patterns/dead-letter-queue.yaml
+#
+# Configuration:
+#   - KAFKA_BROKERS: Kafka broker addresses (required)
+#   - KAFKA_INPUT_TOPIC: Input topic to consume (required)
+#   - KAFKA_DLQ_TOPIC: Dead letter queue topic (required)
+#   - KAFKA_CONSUMER_GROUP: Consumer group ID (default: expanso-dlq)
+#   - OUTPUT_API_URL: Destination API endpoint (required)
+#   - MAX_RETRIES: Max retry attempts (default: 3)
+#   - RETRY_INITIAL_INTERVAL: Initial retry wait (default: 1s)
+#   - RETRY_MAX_INTERVAL: Max retry wait (default: 60s)
+#   - REQUEST_TIMEOUT: HTTP timeout (default: 10s)
+#
+# DLQ Pattern:
+#   1. Consume from input topic
+#   2. Attempt to send to destination API
+#   3. Retry with exponential backoff on failure
+#   4. After MAX_RETRIES, send to DLQ topic for investigation
+#   5. DLQ messages include error metadata for debugging
+
+input:
+  label: "kafka_input"
+  kafka:
+    addresses:
+      - "${KAFKA_BROKERS}"
+    topics:
+      - "${KAFKA_INPUT_TOPIC}"
+    consumer_group: "${KAFKA_CONSUMER_GROUP:expanso-dlq}"
+
+pipeline:
+  processors:
+    - mapping: |
+        # Add attempt tracking
+        root = this
+        root.processing_attempt_at = now().ts_format("2006-01-02T15:04:05Z")
+
+output:
+  label: "dlq_handler"
+  try:
+    # Primary output: HTTP API
+    - http_client:
+        url: "${OUTPUT_API_URL}"
+        verb: POST
+        headers:
+          Content-Type: "application/json"
+        timeout: "${REQUEST_TIMEOUT:10s}"
+        retries: ${MAX_RETRIES:3}
+        backoff:
+          initial_interval: "${RETRY_INITIAL_INTERVAL:1s}"
+          max_interval: "${RETRY_MAX_INTERVAL:60s}"
+          max_elapsed_time: 10m
+
+    # DLQ output: Kafka topic for failed messages
+    - kafka:
+        addresses:
+          - "${KAFKA_BROKERS}"
+        topic: "${KAFKA_DLQ_TOPIC}"
+        max_in_flight: 1
+      processors:
+        - mapping: |
+            # Enrich DLQ message with error context
+            root = this
+            root.dlq_metadata = {
+              "original_topic": "${KAFKA_INPUT_TOPIC}",
+              "failed_at": now().ts_format("2006-01-02T15:04:05Z"),
+              "retry_count": ${MAX_RETRIES:3},
+              "error_type": "max_retries_exceeded",
+              "destination": "${OUTPUT_API_URL}"
+            }
