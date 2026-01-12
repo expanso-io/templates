@@ -1,0 +1,52 @@
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        # Load reference data
+        let users = if !meta("users_loaded").bool() {
+          file("reference-data/users.json").parse_json()
+        } else {
+          meta("lookup_users")
+        }
+
+        meta users_loaded = true
+        meta lookup_users = $users
+
+        root = this
+
+        # Only enrich if user_id is present and valid format
+        root.user = if this.exists("user_id") && this.user_id.string().has_prefix("user-") {
+          let profile = $users.get(this.user_id) catch null
+          if $profile != null {
+            $profile.merge({
+              "lookup_success": true,
+              "lookup_timestamp": now().ts_format("2006-01-02T15:04:05Z")
+            })
+          } else {
+            {
+              "lookup_success": false,
+              "lookup_error": "user_not_found",
+              "user_id_attempted": this.user_id
+            }
+          }
+        } else {
+          {
+            "lookup_success": false,
+            "lookup_error": "invalid_user_id_format"
+          }
+        }
+
+        # Apply business logic based on enriched data
+        root.route_to = match {
+          this.user.lookup_success && this.user.tier == "premium" => "premium_queue",
+          this.user.lookup_success && this.user.tier == "pro" => "pro_queue",
+          this.user.lookup_success => "standard_queue",
+          _ => "unidentified_queue"
+        }
+
+output:
+  stdout:
+    codec: lines

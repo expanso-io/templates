@@ -1,0 +1,53 @@
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        # Load reference data on first message
+        let users = if !meta("users_loaded").bool() {
+          file("reference-data/users.json").parse_json()
+        } else {
+          meta("lookup_users")
+        }
+
+        let products = if !meta("products_loaded").bool() {
+          file("reference-data/products.json").parse_json()
+        } else {
+          meta("lookup_products")
+        }
+
+        # Cache in metadata
+        meta users_loaded = true
+        meta products_loaded = true
+        meta lookup_users = $users
+        meta lookup_products = $products
+
+        # Enrich with user profile
+        root = this
+        root.user = $users.get(this.user_id) catch {
+          "name": "Unknown User",
+          "tier": "free"
+        }
+
+        # Enrich with product details (if product_id exists)
+        root.product = if this.exists("product_id") {
+          $products.get(this.product_id) catch {
+            "name": "Unknown Product",
+            "category": "other"
+          }
+        }
+
+        # Compute derived fields
+        root.is_premium_user = root.user.tier == "premium" || root.user.tier == "pro"
+        root.is_high_value_purchase = (this.exists("amount") && this.amount.number() > 100) ||
+                                       (root.exists("product.price") && root.product.price.number() > 100)
+
+        # Add metadata
+        root.enriched_at = now().ts_format("2006-01-02T15:04:05Z")
+        root.enrichment_sources = ["users", "products"]
+
+output:
+  stdout:
+    codec: lines

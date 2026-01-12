@@ -1,0 +1,38 @@
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    # Load reference data as a global variable
+    - mapping: |
+        # On first message, load users lookup table
+        let users = if !meta("users_loaded").bool() {
+          file("reference-data/users.json").parse_json()
+        } else {
+          meta("lookup_users")
+        }
+
+        # Save to metadata for subsequent messages
+        meta users_loaded = true
+        meta lookup_users = $users
+
+        # Perform lookup
+        root = this
+        root.user_profile = $users.get(this.user_id) catch {
+          "name": "Unknown User",
+          "tier": "free",
+          "region": "unknown"
+        }
+
+        # Add enrichment metadata
+        root.enriched_at = now().ts_format("2006-01-02T15:04:05Z")
+        root.enrichment_source = if $users.exists(this.user_id) {
+          "user_cache"
+        } else {
+          "default_profile"
+        }
+
+output:
+  stdout:
+    codec: lines

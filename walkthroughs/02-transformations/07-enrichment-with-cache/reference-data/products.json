@@ -1,0 +1,20 @@
+{
+  "prod-001": {
+    "name": "Premium Subscription",
+    "category": "subscription",
+    "price": 99.99,
+    "features": ["unlimited", "priority_support", "analytics"]
+  },
+  "prod-002": {
+    "name": "API Credits Bundle",
+    "category": "credits",
+    "price": 49.99,
+    "features": ["10000_credits", "rollover"]
+  },
+  "prod-003": {
+    "name": "Enterprise License",
+    "category": "license",
+    "price": 999.99,
+    "features": ["unlimited", "sla", "dedicated_support", "custom_integration"]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "user-123": {
+    "name": "Alice Johnson",
+    "email": "alice@example.com",
+    "tier": "premium",
+    "region": "us-west",
+    "joined": "2023-01-15"
+  },
+  "user-456": {
+    "name": "Bob Smith",
+    "email": "bob@example.com",
+    "tier": "free",
+    "region": "eu-west",
+    "joined": "2023-06-20"
+  },
+  "user-789": {
+    "name": "Charlie Brown",
+    "email": "charlie@example.com",
+    "tier": "pro",
+    "region": "ap-south",
+    "joined": "2024-02-10"
+  }
+}

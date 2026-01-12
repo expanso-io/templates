@@ -1,0 +1,4 @@
+{"event_id":"evt-201","user_id":"user-123","action":"login"}
+{"event_id":"evt-202","user_id":"invalid","action":"login"}
+{"event_id":"evt-203","action":"view"}
+{"event_id":"evt-204","user_id":"user-999","action":"purchase"}

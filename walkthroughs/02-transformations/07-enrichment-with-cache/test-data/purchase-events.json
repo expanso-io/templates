@@ -1,0 +1,4 @@
+{"event_id":"evt-101","user_id":"user-123","action":"purchase","product_id":"prod-001","timestamp":"2024-01-15T10:00:00Z"}
+{"event_id":"evt-102","user_id":"user-456","action":"purchase","product_id":"prod-002","timestamp":"2024-01-15T10:15:00Z"}
+{"event_id":"evt-103","user_id":"user-789","action":"view","timestamp":"2024-01-15T10:30:00Z"}
+{"event_id":"evt-104","user_id":"user-999","action":"purchase","product_id":"prod-999","amount":150.00,"timestamp":"2024-01-15T10:45:00Z"}
