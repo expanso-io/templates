@@ -1,0 +1,14 @@
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        root = this
+        root.api_key = "${API_KEY}"  # From environment
+        root.processed = true
+
+output:
+  stdout:
+    codec: lines
