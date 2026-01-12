@@ -1,0 +1,13 @@
+input:
+  stdin:
+    codec: lines
+
+output:
+  try:
+    # Primary output (may fail)
+    - file:
+        path: "output/primary-${!timestamp_unix}.json"
+
+    # Fallback if primary fails
+    - file:
+        path: "output/fallback-${!timestamp_unix}.json"
