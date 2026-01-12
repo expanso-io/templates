@@ -1,0 +1,2 @@
+{"user_id":"123","email":"alice@example.com","ssn":"123-45-6789","purchase_amount":150.00}
+{"user_id":"456","email":"bob@example.com","credit_card":"1234-5678-9012-3456","purchase_amount":99.99}

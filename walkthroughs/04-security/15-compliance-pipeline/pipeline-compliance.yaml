@@ -1,0 +1,53 @@
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    # Step 1: PII Detection and Masking
+    - mapping: |
+        root = this
+
+        # Mask email
+        root.email = if this.exists("email") {
+          this.email.re_replace_all("[^@]+", "***")
+        }
+
+        # Detect PII fields for audit
+        root.pii_detected = []
+        root.pii_detected = if this.exists("ssn") { this.pii_detected.append("ssn") }
+        root.pii_detected = if this.exists("credit_card") { this.pii_detected.append("credit_card") }
+
+    # Step 2: Encrypt sensitive fields
+    - mapping: |
+        root = this
+
+        # Encrypt SSN if present
+        root.ssn_encrypted = if this.exists("ssn") {
+          this.ssn.encrypt_aes("${ENCRYPTION_KEY}")
+        }
+        root = root.without("ssn")
+
+    # Step 3: Add audit trail
+    - mapping: |
+        root = this
+        root.compliance_metadata = {
+          "processed_at": now().ts_format("2006-01-02T15:04:05Z"),
+          "pipeline_version": "1.0",
+          "compliance_standards": ["GDPR", "CCPA"],
+          "pii_masked": root.exists("pii_detected") && root.pii_detected.length() > 0,
+          "encryption_applied": root.exists("ssn_encrypted")
+        }
+
+output:
+  broker:
+    pattern: fan_out
+    outputs:
+      # Compliant data output
+      - file:
+          path: "output/compliant-data/${!timestamp_unix:2006/01/02}/${!this.user_id}.json"
+
+      # Audit log
+      - file:
+          path: "output/audit-log/${!timestamp_unix:2006/01/02}/audit.json"
+          codec: lines
