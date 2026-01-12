@@ -1,0 +1,2 @@
+{"event_id":"evt-001","user_id":"user-123","action":"login"}
+{"event_id":"evt-002","user_id":"user-456","action":"purchase","amount":99.99}

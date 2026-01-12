@@ -1,0 +1,29 @@
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    # Validate and enrich
+    - mapping: |
+        root = this
+        root.processed_at = now().ts_format("2006-01-02T15:04:05Z")
+        root.pipeline_version = "1.0"
+
+output:
+  broker:
+    pattern: fan_out
+    outputs:
+      # Archive
+      - try:
+          - file:
+              path: "output/archive/${!timestamp_unix:2006/01/02}/${!this.event_id}.json"
+          - file:
+              path: "output/dlq/archive-failed-${!timestamp_unix}.json"
+
+      # Real-time
+      - try:
+          - stdout:
+              codec: lines
+          - file:
+              path: "output/dlq/realtime-failed-${!timestamp_unix}.json"
