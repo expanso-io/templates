@@ -1,0 +1,4 @@
+{"event_id":"evt-001","user_id":"user-123","action":"login","timestamp":"2024-01-15T10:00:00Z"}
+{"event_id":"evt-002","user_id":"user-456","action":"purchase","amount":99.99,"currency":"USD","timestamp":"2024-01-15T10:15:00Z"}
+{"event_id":"evt-003","user_id":"user-789","action":"view","timestamp":"2024-01-15T10:30:00Z"}
+{"event_id":"evt-004","user_id":"user-456","action":"refund","amount":25.00,"currency":"USD","timestamp":"2024-01-15T10:45:00Z"}

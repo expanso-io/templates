@@ -1,0 +1,4 @@
+{"event_id":"evt-001","user_id":"user-123","action":"login","timestamp":"2024-01-15T10:00:00Z","device":"mobile"}
+{"event_id":"evt-002","user_id":"user-456","action":"purchase","amount":99.99,"timestamp":"2024-01-15T10:15:00Z","cart_items":3}
+{"user_id":"user-789","action":"logout"}
+{"event_id":"evt-004","user_id":"user-111","action":"view","timestamp":"2024-01-15T10:45:00Z","page":"/products"}

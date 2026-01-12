@@ -1,0 +1,43 @@
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    # Validate and transform
+    - mapping: |
+        # Ensure required fields exist
+        root = if this.exists("event_id") && this.exists("user_id") && this.exists("action") {
+          this
+        } else {
+          throw("Missing required fields")
+        }
+
+    # Type conversion and schema mapping
+    - mapping: |
+        root.event_id = this.event_id.string()
+        root.user_id = this.user_id.string()
+        root.action = this.action.string()
+
+        # Convert timestamp to BigQuery TIMESTAMP format
+        root.timestamp = this.timestamp.ts_parse("2006-01-02T15:04:05Z").ts_format("2006-01-02 15:04:05")
+
+        # Handle optional fields
+        root.amount = this.amount.number() catch null
+
+        # Store extra fields as JSON
+        root.metadata = this.without("event_id", "user_id", "action", "timestamp", "amount")
+
+        # Add ingestion timestamp
+        root.ingestion_timestamp = now().ts_format("2006-01-02 15:04:05")
+
+output:
+  gcp_bigquery:
+    project: "${GCP_PROJECT}"
+    dataset: "${BQ_DATASET}"
+    table: "validated_events"
+    credentials_json: "${GCP_CREDENTIALS_FILE:}"
+    auto_create: false
+    batching:
+      count: 100
+      period: "10s"

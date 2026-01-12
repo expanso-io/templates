@@ -1,0 +1,22 @@
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    # Add ingestion metadata
+    - mapping: |
+        root = this
+        root.ingestion_timestamp = now().ts_format("2006-01-02T15:04:05Z")
+        root.pipeline_version = "1.0"
+
+output:
+  gcp_bigquery:
+    project: "${GCP_PROJECT}"
+    dataset: "${BQ_DATASET}"
+    table: "${BQ_TABLE:events}"
+    credentials_json: "${GCP_CREDENTIALS_FILE:}"
+    auto_create: true
+    batching:
+      count: 100
+      period: "10s"

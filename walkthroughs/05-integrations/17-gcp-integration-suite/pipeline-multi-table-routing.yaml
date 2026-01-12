@@ -1,0 +1,47 @@
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    # Add metadata and determine routing
+    - mapping: |
+        root = this
+        root.ingestion_timestamp = now().ts_format("2006-01-02 15:04:05")
+
+        # Convert timestamp
+        root.timestamp = this.timestamp.ts_parse("2006-01-02T15:04:05Z").ts_format("2006-01-02 15:04:05")
+
+        # Determine table based on action
+        root.target_table = if ["purchase", "refund", "charge"].contains(this.action) {
+          "transaction_events"
+        } else {
+          "user_events"
+        }
+
+output:
+  switch:
+    cases:
+      # Route transactions to transaction_events
+      - check: this.target_table == "transaction_events"
+        output:
+          gcp_bigquery:
+            project: "${GCP_PROJECT}"
+            dataset: "${BQ_DATASET}"
+            table: "transaction_events"
+            credentials_json: "${GCP_CREDENTIALS_FILE:}"
+            batching:
+              count: 100
+              period: "10s"
+
+      # Route user events to user_events
+      - check: this.target_table == "user_events"
+        output:
+          gcp_bigquery:
+            project: "${GCP_PROJECT}"
+            dataset: "${BQ_DATASET}"
+            table: "user_events"
+            credentials_json: "${GCP_CREDENTIALS_FILE:}"
+            batching:
+              count: 100
+              period: "10s"
