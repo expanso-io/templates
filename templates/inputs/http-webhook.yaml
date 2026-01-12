@@ -1,0 +1,33 @@
+# Template: HTTP Webhook Receiver
+# Description: Receive HTTP POST webhooks and write to timestamped files
+# Components: http_server → file
+# Docs: https://docs.expanso.io/components/inputs/http_server
+#       https://docs.expanso.io/components/outputs/file
+#
+# Usage:
+#   expanso-edge run templates/inputs/http-webhook.yaml
+#   curl -X POST http://localhost:4195/webhooks \
+#     -H "Content-Type: application/json" \
+#     -d '{"event": "user.created", "user_id": "12345"}'
+#
+# Configuration:
+#   - HTTP_ADDRESS: Address to listen on (default: 0.0.0.0:4195)
+#   - HTTP_PATH: Webhook endpoint path (default: /webhooks)
+#   - HTTP_TIMEOUT: Request timeout (default: 5s)
+#   - OUTPUT_DIR: Directory for output files (default: /tmp/webhooks)
+#   - OUTPUT_CODEC: Output format - lines, all-bytes, append, delim:X (default: lines)
+
+input:
+  label: "webhook_receiver"
+  http_server:
+    address: "${HTTP_ADDRESS:0.0.0.0:4195}"
+    path: "${HTTP_PATH:/webhooks}"
+    allowed_verbs:
+      - POST
+    timeout: "${HTTP_TIMEOUT:5s}"
+
+output:
+  label: "file_writer"
+  file:
+    path: "${OUTPUT_DIR:/tmp/webhooks}/webhook-${!timestamp_unix()}.log"
+    codec: "${OUTPUT_CODEC:lines}"
