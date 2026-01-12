@@ -1,0 +1,47 @@
+# Template: Kafka Consumer with SASL
+# Description: Consume from Kafka topic with SASL authentication
+# Components: kafka → stdout
+# Docs: https://docs.expanso.io/components/inputs/kafka
+#       https://docs.expanso.io/components/outputs/stdout
+#
+# Usage:
+#   export KAFKA_BROKERS="broker1:9092,broker2:9092"
+#   export KAFKA_TOPIC="my-topic"
+#   export KAFKA_GROUP="my-consumer-group"
+#   export KAFKA_SASL_USER="username"
+#   export KAFKA_SASL_PASSWORD="password"
+#   expanso-edge run templates/inputs/kafka-consumer.yaml
+#
+# Configuration:
+#   - KAFKA_BROKERS: Comma-separated broker addresses (default: localhost:9092)
+#   - KAFKA_TOPIC: Topic to consume from (required, default: test-topic)
+#   - KAFKA_GROUP: Consumer group ID (default: expanso-consumer-group)
+#   - KAFKA_CLIENT_ID: Client identifier (default: expanso-edge)
+#   - KAFKA_START_OLDEST: Start from oldest offset (default: true)
+#   - KAFKA_SASL_MECHANISM: SASL mechanism - PLAIN, SCRAM-SHA-256, SCRAM-SHA-512, AWS_MSK_IAM (default: PLAIN)
+#   - KAFKA_SASL_USER: SASL username (required for SASL)
+#   - KAFKA_SASL_PASSWORD: SASL password (required for SASL)
+#   - KAFKA_TLS_ENABLED: Enable TLS (default: true when using SASL)
+#   - OUTPUT_CODEC: Output format (default: lines)
+
+input:
+  label: "kafka_consumer"
+  kafka:
+    addresses:
+      - "${KAFKA_BROKERS:localhost:9092}"
+    topics:
+      - "${KAFKA_TOPIC:test-topic}"
+    consumer_group: "${KAFKA_GROUP:expanso-consumer-group}"
+    client_id: "${KAFKA_CLIENT_ID:expanso-edge}"
+    start_from_oldest: ${KAFKA_START_OLDEST:true}
+    sasl:
+      mechanism: "${KAFKA_SASL_MECHANISM:PLAIN}"
+      user: "${KAFKA_SASL_USER}"
+      password: "${KAFKA_SASL_PASSWORD}"
+    tls:
+      enabled: ${KAFKA_TLS_ENABLED:true}
+
+output:
+  label: "stdout_writer"
+  stdout:
+    codec: "${OUTPUT_CODEC:lines}"
